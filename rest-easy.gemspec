@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables   = []
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = ">= 2.7.0"
+  spec.required_ruby_version = ">= 3.3.0"
 
   spec.add_runtime_dependency "dry-system", "~> 0.21"
   spec.add_runtime_dependency "dry-types", "~> 1.2"

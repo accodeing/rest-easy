@@ -48,7 +48,7 @@ RSpec.describe "Resource inheritance chain" do
   describe "API-level hooks" do
     it "applies before_parse from parent to Invoice" do
       instance = InheritanceTestApi::Invoice.parse({
-        "invoice" => { "Id" => 1, "Name" => "Test Invoice" }
+        "Invoice" => { "Id" => 1, "Name" => "Test Invoice" }
       })
 
       expect(instance.model.name).to eq("Test Invoice")
@@ -56,7 +56,7 @@ RSpec.describe "Resource inheritance chain" do
 
     it "applies before_parse from parent to Customer" do
       instance = InheritanceTestApi::Customer.parse({
-        "customer" => { "Id" => 1, "CompanyName" => "Acme" }
+        "Customer" => { "Id" => 1, "CompanyName" => "Acme" }
       })
 
       expect(instance.model.company_name).to eq("Acme")
@@ -64,13 +64,13 @@ RSpec.describe "Resource inheritance chain" do
 
     it "wraps serialised output with resource name" do
       instance = InheritanceTestApi::Invoice.parse({
-        "invoice" => { "Id" => 1, "Name" => "Test" }
+        "Invoice" => { "Id" => 1, "Name" => "Test" }
       })
 
       serialised = instance.serialise
 
-      expect(serialised).to have_key("invoice")
-      expect(serialised["invoice"]["Name"]).to eq("Test")
+      expect(serialised).to have_key("Invoice")
+      expect(serialised["Invoice"]["Name"]).to eq("Test")
     end
   end
 
@@ -125,7 +125,7 @@ RSpec.describe "Resource inheritance chain" do
 
     it "inherits attributes from parent resource" do
       instance = InheritanceTestApi::Order.parse({
-        "order" => {
+        "Order" => {
           "Id" => 1,
           "Total" => 250.0,
           "CreatedAt" => "2024-01-01",

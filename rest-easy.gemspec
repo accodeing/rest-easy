@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.executables   = []
   spec.require_paths = ["lib"]
 
-  spec.required_ruby_version = ">= 3.3.0"
+  spec.required_ruby_version = ">= 3.1.0"
 
   spec.add_runtime_dependency "dry-system", "~> 0.21"
   spec.add_runtime_dependency "dry-types", "~> 1.2"
@@ -30,6 +30,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dry-auto_inject", "~> 0.9.0"
   spec.add_dependency "dry-inflector", "~> 0.2.1"
   spec.add_dependency "dry-configurable", "~> 0.14"
+  spec.add_dependency "faraday", "~> 2.0"
 
   spec.add_development_dependency "bundler"
   spec.add_development_dependency "rake"

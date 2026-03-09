@@ -86,7 +86,8 @@ module RestEasy
       alias_method :endpoint_path, :path
 
       # -- name / resource_name ------------------------------------------
-      # Overrides Class#name to return the snake_case resource name.
+      # Returns the API-facing resource name, derived from the class name
+      # using the attribute convention (e.g. "Invoice" for PascalCase).
       # Call ruby_class_name to get the original Module#name.
 
       def name(value = :__unset__)
@@ -101,6 +102,16 @@ module RestEasy
 
       def ruby_class_name
         ::Module.instance_method(:name).bind_call(self)
+      end
+
+      # -- metadata ------------------------------------------------------
+
+      def metadata(**kwargs)
+        if kwargs.any?
+          own_metadata_defaults.merge!(kwargs)
+        else
+          all_metadata_defaults
+        end
       end
 
       # -- attribute_convention ------------------------------------------
@@ -380,25 +391,21 @@ module RestEasy
       end
 
       def delete(id)
-        http_delete(path: "#{endpoint_path}/#{id}")
+        parent.delete(path: "#{endpoint_path}/#{id}")
       end
 
-      # HTTP primitives (signatures — actual Faraday integration deferred)
+      # HTTP primitives — delegate to the parent API module's connection
 
-      def get(path: nil, params: {})
-        raise NotImplementedError, "HTTP layer not yet implemented"
+      def get(path:, params: {})
+        parent.get(path:, params:)
       end
 
-      def post(path: nil, body: nil)
-        raise NotImplementedError, "HTTP layer not yet implemented"
+      def post(path:, body: nil)
+        parent.post(path:, body:)
       end
 
-      def put(path: nil, body: nil)
-        raise NotImplementedError, "HTTP layer not yet implemented"
-      end
-
-      def http_delete(path: nil)
-        raise NotImplementedError, "HTTP layer not yet implemented"
+      def put(path:, body: nil)
+        parent.put(path:, body:)
       end
 
       private
@@ -411,6 +418,18 @@ module RestEasy
         @own_ignored_fields ||= []
       end
 
+      def own_metadata_defaults
+        @own_metadata_defaults ||= {}
+      end
+
+      def all_metadata_defaults
+        if superclass.respond_to?(:metadata, true)
+          superclass.metadata.merge(own_metadata_defaults)
+        else
+          own_metadata_defaults
+        end
+      end
+
       def derive_resource_name
         # Get the original Ruby class name, bypassing our name override
         class_name = ruby_class_name
@@ -420,10 +439,14 @@ module RestEasy
         base = class_name.split("::").last
         return nil unless base
 
-        # Convert to snake_case: "TermsOfPayment" → "terms_of_payment"
-        base.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-            .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-            .downcase
+        # Convert to snake_case symbol: "TermsOfPayment" → :terms_of_payment
+        snake = base.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                    .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+                    .downcase
+                    .to_sym
+
+        # Apply the attribute convention: :terms_of_payment → "TermsOfPayment"
+        attribute_convention.serialise(snake)
       end
 
       def resolve_type(type)
@@ -486,7 +509,7 @@ module RestEasy
       klass = self.class
 
       # Run before_serialise hook on the instance
-      # Input: model_attributes. Output: transformed model_attributes.
+      # Input: model_attributes. Side-effect only; return value ignored.
       hook = klass.resolve_before_serialise_hook
       instance_exec(@model_attributes, &hook) if hook
 
@@ -574,7 +597,7 @@ module RestEasy
       @api_data = api_data.is_a?(::Hash) ? api_data.dup : {}
       @model_attributes = {}
       @changes = {}
-      @meta = Meta.new(new_record: false, saved: true)
+      @meta = Meta.new(new_record: false, saved: true, **klass.metadata)
 
       # Run before_parse hook on the instance
       # Input: raw api_data. Output: transformed api_data (e.g. unwrapped envelope).
@@ -632,7 +655,7 @@ module RestEasy
       end
 
       # Run after_parse hook on the instance
-      # Input: model (parsed attributes), api_data (raw). Output: model attributes hash.
+      # Input: model (parsed attributes), api (shadow copy). Side-effect only; return value ignored.
       hook = klass.resolve_after_parse_hook
       if hook
         instance_exec(model, api, &hook)
@@ -640,12 +663,11 @@ module RestEasy
     end
 
     def init_from_model(model_data)
+      klass = self.class
       @api_data = {}
       @model_attributes = {}
       @changes = {}
-      @meta = Meta.new(new_record: true, saved: false)
-
-      klass = self.class
+      @meta = Meta.new(new_record: true, saved: false, **klass.metadata)
 
       # Set attributes from model data
       klass.all_attribute_definitions.each do |model_name, _attr_def|
@@ -657,7 +679,7 @@ module RestEasy
       @api_data = original_api_data
       @model_attributes = new_model_attrs
       @changes = changes
-      @meta = Meta.new(new_record: false, saved: true)
+      @meta = Meta.new(new_record: false, saved: true, **self.class.metadata)
     end
   end
 end

@@ -4,6 +4,7 @@ require "rubygems"
 require "dry/inflector"
 require "dry/auto_inject"
 require "dry/types"
+require "faraday"
 require "zeitwerk"
 
 loader = Zeitwerk::Loader.for_gem
@@ -44,7 +45,18 @@ module RestEasy
     end
   end
 
-  class RequestError < Error; end
+  class RequestError < Error
+    attr_reader :response
+
+    def initialize(response_or_message = nil)
+      if response_or_message.respond_to?(:status)
+        @response = response_or_message
+        super("Request failed: #{response_or_message.status}")
+      else
+        super(response_or_message)
+      end
+    end
+  end
   class AuthenticationError < Error; end
   class RemoteServerError < Error; end
   class RateLimitError < Error; end
@@ -69,15 +81,67 @@ module RestEasy
     def connection(&block)
       if block_given?
         @connection_block = block
-        # Execute immediately to verify block works
-        block.call(Object.new) if block
       end
       @connection_block
+    end
+
+    def faraday_connection
+      @faraday_connection ||= Faraday.new(url: config.base_url) do |f|
+        f.request :json
+        f.response :json
+        @connection_block&.call(f)
+      end
     end
 
     def authentication
       config.authentication
     end
+
+    # ── HTTP primitives ─────────────────────────────────────────────────
+
+    def get(path:, params: {})
+      request_with_auth(:get, path, params:)
+    end
+
+    def post(path:, body: nil)
+      request_with_auth(:post, path, body:)
+    end
+
+    def put(path:, body: nil)
+      request_with_auth(:put, path, body:)
+    end
+
+    def delete(path:)
+      request_with_auth(:delete, path)
+    end
+
+    private
+
+    def request_with_auth(method, path, body: nil, params: {})
+      auth = config.authentication
+      max_retries = config.max_retries
+      attempts = 0
+
+      begin
+        response = faraday_connection.run_request(method, path, body, nil) do |req|
+          req.params.update(params) if params.any?
+          auth.apply(req)
+        end
+
+        raise RequestError.new(response) unless response.success?
+        response.body
+
+      rescue RequestError => e
+        attempts += 1
+        if attempts <= max_retries
+          auth.on_rejected(e.response)
+          retry
+        end
+        raise
+      end
+    end
+
+    public
 
     def register(...)
       self::Application.register(...)

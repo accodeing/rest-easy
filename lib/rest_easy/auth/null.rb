@@ -2,21 +2,15 @@
 
 module RestEasy
   module Auth
+    # No-op auth for APIs that don't require authentication,
+    # or when auth is handled at the transport level (e.g. mTLS).
     class Null
-      def acquire(_config)
-        {}
-      end
-
-      def apply(_credentials, _request)
+      def apply(request)
         # no-op
       end
 
-      def expired?(_credentials)
-        false
-      end
-
-      def on_rejected(_credentials, _response)
-        raise RestEasy::RequestError, "Request failed"
+      def on_rejected(response)
+        raise RestEasy::RequestError.new(response)
       end
     end
   end

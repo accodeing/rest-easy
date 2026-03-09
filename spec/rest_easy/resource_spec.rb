@@ -33,9 +33,9 @@ RSpec.describe RestEasy::Resource do
     end
 
     describe "name" do
-      it "defaults to snake_case of class name" do
+      it "defaults to convention-aware name derived from class name" do
         stub_const("TestApi::TermsOfPayment", Class.new(described_class))
-        expect(TestApi::TermsOfPayment.name).to eq("terms_of_payment")
+        expect(TestApi::TermsOfPayment.name).to eq("TermsOfPayment")
       end
 
       it "can be set explicitly" do
@@ -45,6 +45,75 @@ RSpec.describe RestEasy::Resource do
 
         expect(resource.resource_name).to eq("custom_name")
       end
+    end
+  end
+
+  # ── Metadata defaults ─────────────────────────────────────────────────
+
+  describe "metadata" do
+    it "sets default meta values on parsed instances" do
+      resource = Class.new(described_class) do
+        attr :name, String
+        metadata partial: true
+      end
+
+      instance = resource.parse({ "Name" => "Test" })
+      expect(instance.meta.partial?).to be true
+    end
+
+    it "sets default meta values on stubbed instances" do
+      resource = Class.new(described_class) do
+        attr :name, String
+        metadata partial: true
+      end
+
+      instance = resource.stub(name: "Test")
+      expect(instance.meta.partial?).to be true
+    end
+
+    it "preserves defaults through update" do
+      resource = Class.new(described_class) do
+        attr :name, String
+        metadata partial: true
+      end
+
+      instance = resource.parse({ "Name" => "Test" })
+      updated = instance.update(name: "Changed")
+      expect(updated.meta.partial?).to be true
+    end
+
+    it "allows instance-level override of defaults" do
+      resource = Class.new(described_class) do
+        attr :name, String
+        metadata partial: true
+      end
+
+      instance = resource.parse({ "Name" => "Test" })
+      instance.meta.partial = false
+      expect(instance.meta.partial?).to be false
+    end
+
+    it "inherits metadata from parent resource" do
+      parent = Class.new(described_class) do
+        metadata partial: true
+      end
+
+      child = Class.new(parent) do
+        attr :name, String
+        metadata author: "test"
+      end
+
+      instance = child.parse({ "Name" => "Test" })
+      expect(instance.meta.partial?).to be true
+      expect(instance.meta.author).to eq("test")
+    end
+
+    it "returns empty hash when no metadata defined" do
+      resource = Class.new(described_class) do
+        attr :name, String
+      end
+
+      expect(resource.metadata).to eq({})
     end
   end
 

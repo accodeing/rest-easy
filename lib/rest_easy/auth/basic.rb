@@ -4,22 +4,19 @@ require "base64"
 
 module RestEasy
   module Auth
+    # HTTP Basic authentication.
+    # Encodes username:password as Base64 and sets the Authorization header.
     class Basic
-      def acquire(config)
-        encoded = Base64.strict_encode64("#{config.username}:#{config.password}")
-        { encoded: encoded }
+      def initialize(username:, password:)
+        @encoded = Base64.strict_encode64("#{username}:#{password}")
       end
 
-      def apply(credentials, request)
-        request.headers["Authorization"] = "Basic #{credentials[:encoded]}"
+      def apply(request)
+        request.headers["Authorization"] = "Basic #{@encoded}"
       end
 
-      def expired?(_credentials)
-        false
-      end
-
-      def on_rejected(_credentials, _response)
-        raise RestEasy::AuthenticationError, "Authentication failed"
+      def on_rejected(response)
+        raise RestEasy::AuthenticationError, "Authentication failed: #{response.status}"
       end
     end
   end

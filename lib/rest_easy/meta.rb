@@ -2,8 +2,8 @@
 
 module RestEasy
   class Meta
-    def initialize(new_record: false, saved: false)
-      @data = { new: new_record, saved: saved }
+    def initialize(new_record: false, saved: false, **defaults)
+      @data = { new: new_record, saved: saved, **defaults }
     end
 
     def new?

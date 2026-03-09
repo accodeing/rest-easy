@@ -82,8 +82,36 @@ RSpec.describe "Module setup with extend RestEasy" do
   end
 
   describe "connection" do
-    it "accepts a block for transport-level configuration" do
-      connection_block_called = false
+    it "stores the connection block for lazy execution" do
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+        end
+      end
+
+      SetupTestApi.connection do |conn|
+        # configure middleware, SSL, etc.
+      end
+
+      expect(SetupTestApi.connection).to be_a(Proc)
+    end
+
+    it "creates a Faraday connection lazily" do
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+        end
+      end
+
+      expect(SetupTestApi.faraday_connection).to be_a(Faraday::Connection)
+    end
+
+    it "passes the connection block to Faraday" do
+      block_called = false
 
       module SetupTestApi
         extend RestEasy
@@ -94,10 +122,11 @@ RSpec.describe "Module setup with extend RestEasy" do
       end
 
       SetupTestApi.connection do |conn|
-        connection_block_called = true
+        block_called = true
       end
 
-      expect(connection_block_called).to be true
+      SetupTestApi.faraday_connection # triggers lazy creation
+      expect(block_called).to be true
     end
   end
 

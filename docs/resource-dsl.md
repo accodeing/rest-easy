@@ -10,7 +10,7 @@ flexible patterns.
 ## Module setup
 
 Before defining resources you need a module that acts as the namespace for your API
-client. This is where shared configuration lives.
+client. This is where shared configuration and resources live.
 
 ```ruby
 module Fortnox
@@ -193,6 +193,8 @@ This bypasses the convention entirely for that attribute. The API name
 `"@urlTaxReductionList"` maps to and from `:tax_reduction_list_url` directly.
 
 The `using RestEasy::Refinements` line must appear in any file that uses `<=>`.
+If you'd rather not then you can pass the two names as an array instead:
+`attr ['@urlTaxReductionList', :tax_reduction_list_url], String, :read_only`
 
 ## Ignoring fields
 
@@ -320,29 +322,30 @@ They run on the instance via `instance_exec`, giving you access to `model`, `api
 
 ### `before_parse`
 
-Runs before attribute parsing. Receives the raw API data, returns the (possibly
-transformed) data to parse. Commonly used for unwrapping response envelopes:
+Runs before attribute parsing. Receives the raw API data. **Return value replaces
+the data** that will be parsed — use this to unwrap response envelopes:
 
 ```ruby
 before_parse do |api_data|
-  api_data["Invoice"]
+  api_data[resource_name]   # must return the unwrapped hash
 end
 ```
 
 ### `after_parse`
 
-Runs after all attributes have been parsed. Receives `model` and `api`:
+Runs after all attributes have been parsed. Receives `model` and `api`.
+**Return value is ignored** — use this for side effects like setting metadata:
 
 ```ruby
 after_parse do |model, api|
-  # Set metadata, compute derived state, etc.
-  meta.partial = true if api.attributes.key?("@partial")
+  meta.partial = true if api.attributes.length < model.attributes.length
 end
 ```
 
 ### `before_serialise`
 
-Runs before attribute serialisation. Receives the model attributes hash:
+Runs before attribute serialisation. Receives the model attributes hash.
+**Return value is ignored** — use this for side effects like logging or validation:
 
 ```ruby
 before_serialise do |attrs|
@@ -352,12 +355,12 @@ end
 
 ### `after_serialise`
 
-Runs after serialisation. Receives the serialised hash and model, returns the final
-hash. Commonly used for wrapping in an envelope:
+Runs after serialisation. Receives the serialised hash and model. **Return value
+becomes the final output** — use this to wrap in an envelope:
 
 ```ruby
 after_serialise do |api_data|
-  { "Invoice" => api_data }
+  { resource_name => api_data }   # must return the wrapped hash
 end
 ```
 
@@ -379,7 +382,7 @@ Define shared behaviour once:
 ```ruby
 class Fortnox::Resource < RestEasy::Resource
   before_parse do |api_data|
-    api_data[resource_name]       # unwrap { "invoice" => { ... } }
+    api_data[resource_name]       # unwrap { "Invoice" => { ... } }
   end
 
   after_serialise do |api_data|
@@ -388,8 +391,11 @@ class Fortnox::Resource < RestEasy::Resource
 end
 ```
 
-`resource_name` is derived from the class name (`Fortnox::Invoice` becomes
-`"invoice"`), so the hooks work for any endpoint resource.
+`resource_name` is derived from the class name using the active attribute
+convention. With `:PascalCase`, `Fortnox::Invoice` becomes `"Invoice"`;
+with `:snake_case` it would become `"invoice"`. You can override it
+explicitly with `name "CustomName"`. The original Ruby class name is always
+available via `ruby_class_name`.
 
 ### Endpoint resources
 
@@ -486,9 +492,37 @@ stub = Fortnox::Invoice.stub(customer_name: "Draft")
 stub.meta.new?          # => true (created locally)
 stub.meta.saved?        # => false
 
-# Custom metadata
+# Custom metadata (set per-instance)
 invoice.meta.partial = true
 invoice.meta.partial?   # => true
+```
+
+#### Class-level metadata defaults
+
+Use `metadata` to set default meta values for every instance of a resource:
+
+```ruby
+class Fortnox::Resource < RestEasy::Resource
+  metadata partial: true
+end
+```
+
+Every instance created via `parse`, `stub`, or `update` will have
+`meta.partial?` return `true`. Instances can still override defaults:
+
+```ruby
+invoice.meta.partial = false
+invoice.meta.partial?   # => false
+```
+
+Metadata defaults are inherited and merged. A child class can add to or
+override its parent's defaults:
+
+```ruby
+class Fortnox::Invoice < Fortnox::Resource
+  metadata wrapper: "Invoice"
+  # inherits partial: true from parent, adds wrapper: "Invoice"
+end
 ```
 
 ## Change tracking and immutability
@@ -558,8 +592,9 @@ end
 ```ruby
 class Fortnox::Invoice < Fortnox::Resource
   path "invoices"                                            # endpoint path
-  name "custom_name"                                         # override derived name
+  name "CustomName"                                          # override derived name
   attribute_convention :PascalCase                            # override convention
+  metadata partial: true                                     # default meta on instances
 
   key :document_number, Integer, :read_only                  # unique identifier
 
@@ -590,10 +625,10 @@ class Fortnox::Invoice < Fortnox::Resource
 
   ignore :internal_id, :legacy_flag                          # silence warnings
 
-  before_parse     { |api_data| api_data["Invoice"] }        # unwrap envelope
-  after_parse      { |model, api| }                          # post-parse logic
-  before_serialise { |attrs| }                               # pre-serialise logic
-  after_serialise  { |data| { "Invoice" => data } }          # wrap envelope
+  before_parse     { |api_data| api_data[resource_name] }    # unwrap envelope
+  after_parse      { |model, api| ... }                      # post-parse logic
+  before_serialise { |attrs| ... }                           # pre-serialise logic
+  after_serialise  { |data| { resource_name => data } }      # wrap envelope
 
   with_stub customer_name: "Default"                         # stub defaults
 end

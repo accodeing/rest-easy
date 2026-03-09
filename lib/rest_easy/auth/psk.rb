@@ -2,27 +2,21 @@
 
 module RestEasy
   module Auth
+    # Pre-shared key (API key) authentication.
+    # Applies a static key as a request header.
     class PSK
-      def acquire(config)
-        {
-          api_key: config.api_key,
-          header_name: config.respond_to?(:header_name) ? config.header_name : "Authorization",
-          header_prefix: config.respond_to?(:header_prefix) ? config.header_prefix : "Bearer"
-        }
+      def initialize(api_key:, header_name: "Authorization", header_prefix: "Bearer")
+        @api_key = api_key
+        @header_name = header_name
+        @header_prefix = header_prefix
       end
 
-      def apply(credentials, request)
-        header_name = credentials[:header_name] || "Authorization"
-        header_prefix = credentials[:header_prefix] || "Bearer"
-        request.headers[header_name] = "#{header_prefix} #{credentials[:api_key]}"
+      def apply(request)
+        request.headers[@header_name] = "#{@header_prefix} #{@api_key}"
       end
 
-      def expired?(_credentials)
-        false
-      end
-
-      def on_rejected(_credentials, _response)
-        raise RestEasy::RequestError, "Request failed"
+      def on_rejected(response)
+        raise RestEasy::RequestError.new(response)
       end
     end
   end

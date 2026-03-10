@@ -946,4 +946,117 @@ RSpec.describe RestEasy::Resource do
       }.to raise_error(RestEasy::ConstraintError)
     end
   end
+
+  # ── Settings (Dry::Configurable on Resource) ──────────────────────────
+
+  describe "settings" do
+    it "declares a setting via the settings block" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+      end
+
+      expect(resource.config.wrapper).to be true
+    end
+
+    it "allows reading settings via config" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :collection_name, default: "items"
+        end
+      end
+
+      resource.config.collection_name = "records"
+      expect(resource.config.collection_name).to eq("records")
+    end
+
+    it "supports reader: true for accessor methods" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true, reader: true
+        end
+      end
+
+      expect(resource.wrapper).to be true
+    end
+
+    it "inherits settings from parent resource" do
+      parent = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+      end
+
+      child = Class.new(parent) do
+        attr :name, String
+      end
+
+      expect(child.config.wrapper).to be true
+    end
+
+    it "isolates config between sibling classes" do
+      parent = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+      end
+
+      child_a = Class.new(parent)
+      child_b = Class.new(parent)
+
+      child_a.config.wrapper = false
+
+      expect(child_a.config.wrapper).to be false
+      expect(child_b.config.wrapper).to be true
+      expect(parent.config.wrapper).to be true
+    end
+
+    it "allows child to override inherited defaults without affecting parent" do
+      parent = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+      end
+
+      child = Class.new(parent)
+      child.config.wrapper = false
+
+      expect(child.config.wrapper).to be false
+      expect(parent.config.wrapper).to be true
+    end
+
+    it "accumulates settings from multiple levels" do
+      grandparent = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+      end
+
+      parent = Class.new(grandparent) do
+        settings do
+          setting :collection_name, default: "items"
+        end
+      end
+
+      child = Class.new(parent) do
+        attr :name, String
+      end
+
+      expect(child.config.wrapper).to be true
+      expect(child.config.collection_name).to eq("items")
+    end
+
+    it "exposes config on instances for use in hooks" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: true
+        end
+        attr :name, String
+      end
+
+      instance = resource.parse({ "Name" => "Test" })
+      expect(instance.config.wrapper).to be true
+    end
+  end
 end

@@ -4,6 +4,8 @@ require "json"
 
 module RestEasy
   class Resource
+    extend Dry::Configurable
+
     # ── Types ─────────────────────────────────────────────────────────────
     # Include Types so the full Dry::Types vocabulary (Strict::String,
     # Coercible::Integer, Params::Date, etc.) is available without prefix.
@@ -73,6 +75,12 @@ module RestEasy
     # ── Class-level DSL ─────────────────────────────────────────────────
 
     class << self
+      # -- settings -------------------------------------------------------
+
+      def settings(&block)
+        class_eval(&block)
+      end
+
       # -- path / endpoint_path ------------------------------------------
 
       def path(value = :__unset__)
@@ -470,6 +478,10 @@ module RestEasy
 
     def endpoint_path
       self.class.endpoint_path
+    end
+
+    def config
+      self.class.config
     end
 
     attr_reader :meta

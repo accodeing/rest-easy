@@ -26,8 +26,10 @@ RSpec.describe "HTTP integration" do
     end
 
     class HttpTestApi::Invoice < HttpTestApi::Resource
-      endpoint_path "invoices"
-      config.wrapper_name = "Invoice"
+      configure do
+        path "invoices"
+        wrapper_name "Invoice"
+      end
 
       key :document_number, Integer, :read_only
       attr :customer_name, String

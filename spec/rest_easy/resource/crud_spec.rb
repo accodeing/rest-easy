@@ -27,8 +27,10 @@ RSpec.describe "Resource CRUD operations" do
     end
 
     class CrudTestApi::Invoice < CrudTestApi::Resource
-      endpoint_path "invoices"
-      config.wrapper_name = "Invoice"
+      configure do
+        path "invoices"
+        wrapper_name "Invoice"
+      end
 
       key :document_number, Integer, :read_only
       attr :customer_name, String, :required
@@ -155,7 +157,7 @@ RSpec.describe "Resource CRUD operations" do
       class CrudTestApi::PostUpdateResource < RestEasy::Resource
         def self.update(instance)
           response = post(
-            path: "#{endpoint_path}/#{instance.unique_id}",
+            path: "#{config.path}/#{instance.unique_id}",
             body: instance.serialise
           )
           parse(response)
@@ -163,7 +165,9 @@ RSpec.describe "Resource CRUD operations" do
       end
 
       class CrudTestApi::Order < CrudTestApi::PostUpdateResource
-        endpoint_path "orders"
+        configure do
+          path "orders"
+        end
 
         key :id, Integer, :read_only
         attr :total, Float

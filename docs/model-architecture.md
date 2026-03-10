@@ -73,7 +73,7 @@ module Fortnox
   class Resource < RestEasy::Resource
     # Fortnox uses POST for updates instead of PUT
     def self.update(instance)
-      post(path: "#{endpoint_path}/#{instance.unique_id}", body: instance.serialise)
+      post(path: "#{config.path}/#{instance.unique_id}", body: instance.serialise)
     end
 
     settings do
@@ -99,7 +99,9 @@ attributes and any further overrides:
 ```ruby
 module Fortnox
   class Invoice < Resource
-    endpoint_path "invoices"
+    configure do
+      path "invoices"
+    end
 
     with_stub customer_number: ''
 
@@ -184,7 +186,7 @@ behaviour:
 # API-wide: Fortnox uses POST for updates
 class Fortnox::Resource < RestEasy::Resource
   def self.update(instance)
-    post(path: "#{endpoint_path}/#{instance.unique_id}", body: instance.serialise)
+    post(path: "#{config.path}/#{instance.unique_id}", body: instance.serialise)
   end
 end
 
@@ -338,8 +340,6 @@ end
 
 ## Supporting Class Methods
 
-- `endpoint_path "path"` — The URL path segment for this resource, appended to
-  the module's base_url.
 - `settings do ... end` — Declare custom `Dry::Configurable` settings that
   inherit through the resource hierarchy with per-subclass isolation. Access
   values via `config.setting_name` on the class or on instances (for use in hooks).

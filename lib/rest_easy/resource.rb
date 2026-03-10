@@ -6,6 +6,8 @@ module RestEasy
   class Resource
     extend Dry::Configurable
 
+    setting :path
+
     # ── Types ─────────────────────────────────────────────────────────────
     # Include Types so the full Dry::Types vocabulary (Strict::String,
     # Coercible::Integer, Params::Date, etc.) is available without prefix.
@@ -106,18 +108,6 @@ module RestEasy
         dsl = ConfigureDSL.new(config)
         dsl.instance_eval(&block)
       end
-
-      # -- path / endpoint_path ------------------------------------------
-
-      def path(value = :__unset__)
-        if value == :__unset__
-          @endpoint_path
-        else
-          @endpoint_path = value.to_s
-        end
-      end
-
-      alias_method :endpoint_path, :path
 
       # -- metadata ------------------------------------------------------
 
@@ -369,14 +359,14 @@ module RestEasy
       # CRUD operations
 
       def find(id)
-        response = get(path: "#{endpoint_path}/#{id}")
+        response = get(path: "#{config.path}/#{id}")
         parse(response)
       end
 
       def all
-        response = get(path: endpoint_path.to_s)
+        response = get(path: config.path.to_s)
         unless response.is_a?(::Array)
-          raise Error, "Expected Array from #{endpoint_path}, got #{response.class}. Does the response need unwrapping in before_parse?"
+          raise Error, "Expected Array from #{config.path}, got #{response.class}. Does the response need unwrapping in before_parse?"
         end
         response.map { |data| parse(data) }
       end
@@ -391,7 +381,7 @@ module RestEasy
 
       def create(instance)
         response = post(
-          path: "#{endpoint_path}",
+          path: "#{config.path}",
           body: instance.serialise
         )
         parse(response)
@@ -399,14 +389,14 @@ module RestEasy
 
       def update(instance)
         response = put(
-          path: "#{endpoint_path}/#{instance.unique_id}",
+          path: "#{config.path}/#{instance.unique_id}",
           body: instance.serialise
         )
         parse(response)
       end
 
       def delete(id)
-        parent.delete(path: "#{endpoint_path}/#{id}")
+        parent.delete(path: "#{config.path}/#{id}")
       end
 
       # HTTP primitives — delegate to the parent API module's connection
@@ -459,11 +449,7 @@ module RestEasy
 
     # ── Instance ─────────────────────────────────────────────────────────
 
-    # Delegate class DSL methods so hooks can call them via instance_exec
-    def endpoint_path
-      self.class.endpoint_path
-    end
-
+    # Delegate class-level config so hooks can call it via instance_exec
     def config
       self.class.config
     end

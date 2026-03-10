@@ -31,16 +31,20 @@ RSpec.describe "Resource inheritance chain" do
 
     # Endpoint-specific resource
     class InheritanceTestApi::Invoice < InheritanceTestApi::Resource
-      endpoint_path "invoices"
-      config.wrapper_name = "Invoice"
+      configure do
+        path "invoices"
+        wrapper_name "Invoice"
+      end
 
       key :id, Integer, :read_only
       attr :name, String
     end
 
     class InheritanceTestApi::Customer < InheritanceTestApi::Resource
-      endpoint_path "customers"
-      config.wrapper_name = "Customer"
+      configure do
+        path "customers"
+        wrapper_name "Customer"
+      end
 
       key :id, Integer, :read_only
       attr :company_name, String
@@ -83,7 +87,9 @@ RSpec.describe "Resource inheritance chain" do
   describe "overriding at endpoint level" do
     before(:all) do
       class InheritanceTestApi::SpecialInvoice < InheritanceTestApi::Resource
-        endpoint_path "special-invoices"
+        configure do
+          path "special-invoices"
+        end
 
         key :id, Integer, :read_only
         attr :name, String
@@ -117,8 +123,10 @@ RSpec.describe "Resource inheritance chain" do
       end
 
       class InheritanceTestApi::Order < InheritanceTestApi::Document
-        endpoint_path "orders"
-        config.wrapper_name = "Order"
+        configure do
+          path "orders"
+          wrapper_name "Order"
+        end
 
         key :id, Integer, :read_only
         attr :total, Float

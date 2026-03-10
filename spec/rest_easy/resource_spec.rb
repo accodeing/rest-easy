@@ -23,12 +23,14 @@ RSpec.describe RestEasy::Resource do
 
   describe "class-level DSL" do
     describe "path" do
-      it "sets the endpoint path" do
+      it "sets the endpoint path via configure" do
         resource = Class.new(described_class) do
-          path "invoices"
+          configure do
+            path "invoices"
+          end
         end
 
-        expect(resource.path).to eq("invoices")
+        expect(resource.config.path).to eq("invoices")
       end
     end
 

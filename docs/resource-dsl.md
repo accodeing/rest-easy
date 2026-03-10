@@ -31,7 +31,9 @@ serialising them back.
 
 ```ruby
 class Fortnox::Invoice < RestEasy::Resource
-  path "invoices"
+  configure do
+    path "invoices"
+  end
 
   key :document_number, Integer, :read_only
   attr :customer_name,  String, :required
@@ -318,7 +320,7 @@ two model attributes, it gathers their current values and passes them in.
 
 Hooks let you transform data at specific points in the parse/serialise pipeline.
 They run on the instance via `instance_exec`, giving you access to `model`, `api`,
-`meta`, `config`, and `endpoint_path`.
+`meta` and `config`.
 
 ### `before_parse`
 
@@ -402,9 +404,11 @@ Endpoint resources inherit hooks, convention, and attributes from their parent:
 
 ```ruby
 class Fortnox::Invoice < Fortnox::Resource
-  path "invoices"
-  config.instance_wrapper = "Invoice"
-  config.collection_wrapper = "Invoices"
+  configure do
+    path "invoices"
+    instance_wrapper "Invoice"
+    collection_wrapper "Invoices"
+  end
 
   key :document_number, Integer, :read_only
   attr :customer_name,  String, :required
@@ -412,9 +416,11 @@ class Fortnox::Invoice < Fortnox::Resource
 end
 
 class Fortnox::Customer < Fortnox::Resource
-  path "customers"
-  config.instance_wrapper = "Customer"
-  config.collection_wrapper = "Customers"
+  configure do
+    path "customers"
+    instance_wrapper "Customer"
+    collection_wrapper "Customers"
+  end
 
   key :customer_number, Integer, :read_only
   attr :name, String
@@ -432,7 +438,9 @@ class Fortnox::Document < Fortnox::Resource
 end
 
 class Fortnox::Order < Fortnox::Document
-  path "orders"
+  configure do
+    path "orders"
+  end
 
   key :id, Integer, :read_only
   attr :total, Float
@@ -449,7 +457,9 @@ addition to the parent's:
 
 ```ruby
 class Fortnox::SpecialInvoice < Fortnox::Resource
-  path "special-invoices"
+  configure do
+    path "special-invoices"
+  end
 
   before_parse do |api_data|
     api_data["SpecialWrapper"]["Data"]
@@ -582,7 +592,7 @@ These can be overridden at the API-level for non-standard APIs:
 class Fortnox::Resource < RestEasy::Resource
   def self.update(instance)
     response = post(
-      path: "#{endpoint_path}/#{instance.unique_id}",
+      path: "#{config.path}/#{instance.unique_id}",
       body: instance.serialise
     )
     parse(response)
@@ -594,9 +604,12 @@ end
 
 ```ruby
 class Fortnox::Invoice < Fortnox::Resource
-  path "invoices"                                            # endpoint path
-  config.instance_wrapper = "Invoice"                        # envelope key (setting)
-  config.collection_wrapper = "Invoices"                     # list envelope key (setting)
+  configure do
+    path "invoices"                                          # endpoint path
+    instance_wrapper "Invoice"                               # envelope key (setting)
+    collection_wrapper "Invoices"                            # list envelope key (setting)
+  end
+
   attribute_convention :PascalCase                            # override convention
   metadata partial: true                                     # default meta on instances
 

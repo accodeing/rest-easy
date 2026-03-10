@@ -6,28 +6,12 @@ RSpec.describe "Module setup with extend RestEasy" do
   end
 
   describe "extending a module" do
-    it "creates an Application container" do
-      module SetupTestApi
-        extend RestEasy
-      end
-
-      expect(SetupTestApi.const_defined?(:Application)).to be true
-    end
-
     it "creates a Settings class" do
       module SetupTestApi
         extend RestEasy
       end
 
       expect(SetupTestApi.const_defined?(:Settings)).to be true
-    end
-
-    it "creates a Deps injector" do
-      module SetupTestApi
-        extend RestEasy
-      end
-
-      expect(SetupTestApi.const_defined?(:Deps)).to be true
     end
 
     it "prevents double registration" do
@@ -127,26 +111,6 @@ RSpec.describe "Module setup with extend RestEasy" do
 
       SetupTestApi.faraday_connection # triggers lazy creation
       expect(block_called).to be true
-    end
-  end
-
-  describe "container registration" do
-    it "allows registering custom services" do
-      module SetupTestApi
-        extend RestEasy
-        register("custom.service", -> { "hello" })
-      end
-
-      expect(SetupTestApi.resolve("custom.service")).to eq("hello")
-    end
-
-    it "supports bracket syntax for resolve" do
-      module SetupTestApi
-        extend RestEasy
-        register("custom.service", -> { "hello" })
-      end
-
-      expect(SetupTestApi["custom.service"]).to eq("hello")
     end
   end
 

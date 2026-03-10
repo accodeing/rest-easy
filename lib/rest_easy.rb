@@ -2,7 +2,6 @@
 
 require "rubygems"
 require "dry/inflector"
-require "dry/auto_inject"
 require "dry/types"
 require "faraday"
 require "zeitwerk"
@@ -139,17 +138,6 @@ module RestEasy
       end
     end
 
-    public
-
-    def register(...)
-      self::Application.register(...)
-    end
-
-    def resolve(...)
-      self::Application.resolve(...)
-    end
-
-    alias_method :[], :resolve
   end
 
   # ── Type bridge ─────────────────────────────────────────────────────
@@ -183,18 +171,13 @@ module RestEasy
         raise Error, "Double registration of #{base}."
       end
 
-      %i[Application Settings Deps].each do |name|
-        if base.const_defined?(name, CHECK_ANCESTORS)
-          raise Error, "#{base} already defines #{name}. RestEasy needs this constant."
-        end
+      if base.const_defined?(:Settings, CHECK_ANCESTORS)
+        raise Error, "#{base} already defines Settings. RestEasy needs this constant."
       end
 
-      # Clone application and settings so each API module gets its own state.
-      application = Class.new(Application)
+      # Clone settings so each API module gets its own config state.
       settings = Class.new(Settings)
 
-      base.const_set(:Deps, Dry::AutoInject(application))
-      base.const_set(:Application, application)
       base.const_set(:Settings, settings)
       base.const_set(:ExtendedByRestEasy, true)
       base.extend ClassMethods

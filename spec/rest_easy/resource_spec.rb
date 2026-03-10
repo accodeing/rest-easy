@@ -1045,4 +1045,86 @@ RSpec.describe RestEasy::Resource do
       expect(instance.config.wrapper).to be true
     end
   end
+
+  # ── Configure DSL ────────────────────────────────────────────────────
+
+  describe "configure" do
+    it "sets a config value via method-call syntax" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :adapter, default: :rest
+        end
+
+        configure do
+          adapter :grpc
+        end
+      end
+
+      expect(resource.config.adapter).to eq(:grpc)
+    end
+
+    it "sets multiple values in one block" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :adapter, default: :rest
+          setting :pool, default: 1
+        end
+
+        configure do
+          adapter :grpc
+          pool 5
+        end
+      end
+
+      expect(resource.config.adapter).to eq(:grpc)
+      expect(resource.config.pool).to eq(5)
+    end
+
+    it "works with nested settings" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :database do
+            setting :dsn, default: "sqlite:memory"
+          end
+        end
+
+        configure do
+          database.dsn = "postgres://localhost/app"
+        end
+      end
+
+      expect(resource.config.database.dsn).to eq("postgres://localhost/app")
+    end
+
+    it "inherits settings and allows child to configure them" do
+      parent = Class.new(described_class) do
+        settings do
+          setting :adapter, default: :rest
+        end
+      end
+
+      child = Class.new(parent) do
+        configure do
+          adapter :grpc
+        end
+      end
+
+      expect(child.config.adapter).to eq(:grpc)
+      expect(parent.config.adapter).to eq(:rest)
+    end
+
+    it "can be called after class definition" do
+      resource = Class.new(described_class) do
+        settings do
+          setting :pool, default: 1
+        end
+      end
+
+      resource.configure do
+        pool 10
+      end
+
+      expect(resource.config.pool).to eq(10)
+    end
+  end
 end

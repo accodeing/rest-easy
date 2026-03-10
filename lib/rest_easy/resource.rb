@@ -29,6 +29,27 @@ module RestEasy
       ::Float   => Types::Coercible::Float
     }.freeze
 
+    # ── Configure DSL proxy ─────────────────────────────────────────────
+    # Evaluates a block in a context where bare method calls map to config
+    # setters:  `adapter :grpc`  →  config.adapter = :grpc
+    # No-arg calls read, so nested access works naturally:
+    #   `database.dsn = "sqlite:memory"`  →  config.database is returned,
+    #   then .dsn= is called on the nested config directly.
+
+    class ConfigureDSL < BasicObject
+      def initialize(config)
+        @config = config
+      end
+
+      def method_missing(name, *args)
+        if args.empty?
+          @config.__send__(name)
+        else
+          @config.__send__(:"#{name}=", args.length == 1 ? args.first : args)
+        end
+      end
+    end
+
     # ── DSL helper for attribute parse/serialise blocks ─────────────────
 
     class AttributeBlockDSL
@@ -79,6 +100,11 @@ module RestEasy
 
       def settings(&block)
         class_eval(&block)
+      end
+
+      def configure(&block)
+        dsl = ConfigureDSL.new(config)
+        dsl.instance_eval(&block)
       end
 
       # -- path / endpoint_path ------------------------------------------

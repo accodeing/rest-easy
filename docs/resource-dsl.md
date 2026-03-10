@@ -318,7 +318,7 @@ two model attributes, it gathers their current values and passes them in.
 
 Hooks let you transform data at specific points in the parse/serialise pipeline.
 They run on the instance via `instance_exec`, giving you access to `model`, `api`,
-`meta`, `resource_name`, and `endpoint_path`.
+`meta`, `config`, and `endpoint_path`.
 
 ### `before_parse`
 
@@ -327,7 +327,7 @@ the data** that will be parsed — use this to unwrap response envelopes:
 
 ```ruby
 before_parse do |api_data|
-  api_data[resource_name]   # must return the unwrapped hash
+  api_data[config.instance_wrapper]   # must return the unwrapped hash
 end
 ```
 
@@ -360,7 +360,7 @@ becomes the final output** — use this to wrap in an envelope:
 
 ```ruby
 after_serialise do |api_data|
-  { resource_name => api_data }   # must return the wrapped hash
+  { config.instance_wrapper => api_data }   # must return the wrapped hash
 end
 ```
 
@@ -381,21 +381,20 @@ Define shared behaviour once:
 
 ```ruby
 class Fortnox::Resource < RestEasy::Resource
+  settings do
+    setting :instance_wrapper
+    setting :collection_wrapper
+  end
+
   before_parse do |api_data|
-    api_data[resource_name]       # unwrap { "Invoice" => { ... } }
+    api_data[config.instance_wrapper]       # unwrap { "Invoice" => { ... } }
   end
 
   after_serialise do |api_data|
-    { resource_name => api_data } # re-wrap for the API
+    { config.instance_wrapper => api_data } # re-wrap for the API
   end
 end
 ```
-
-`resource_name` is derived from the class name using the active attribute
-convention. With `:PascalCase`, `Fortnox::Invoice` becomes `"Invoice"`;
-with `:snake_case` it would become `"invoice"`. You can override it
-explicitly with `name "CustomName"`. The original Ruby class name is always
-available via `ruby_class_name`.
 
 ### Endpoint resources
 
@@ -404,6 +403,8 @@ Endpoint resources inherit hooks, convention, and attributes from their parent:
 ```ruby
 class Fortnox::Invoice < Fortnox::Resource
   path "invoices"
+  config.instance_wrapper = "Invoice"
+  config.collection_wrapper = "Invoices"
 
   key :document_number, Integer, :read_only
   attr :customer_name,  String, :required
@@ -412,6 +413,8 @@ end
 
 class Fortnox::Customer < Fortnox::Resource
   path "customers"
+  config.instance_wrapper = "Customer"
+  config.collection_wrapper = "Customers"
 
   key :customer_number, Integer, :read_only
   attr :name, String
@@ -592,7 +595,8 @@ end
 ```ruby
 class Fortnox::Invoice < Fortnox::Resource
   path "invoices"                                            # endpoint path
-  name "CustomName"                                          # override derived name
+  config.instance_wrapper = "Invoice"                        # envelope key (setting)
+  config.collection_wrapper = "Invoices"                     # list envelope key (setting)
   attribute_convention :PascalCase                            # override convention
   metadata partial: true                                     # default meta on instances
 
@@ -625,10 +629,10 @@ class Fortnox::Invoice < Fortnox::Resource
 
   ignore :internal_id, :legacy_flag                          # silence warnings
 
-  before_parse     { |api_data| api_data[resource_name] }    # unwrap envelope
+  before_parse     { |data| data[config.instance_wrapper] }  # unwrap envelope
   after_parse      { |model, api| ... }                      # post-parse logic
   before_serialise { |attrs| ... }                           # pre-serialise logic
-  after_serialise  { |data| { resource_name => data } }      # wrap envelope
+  after_serialise  { |data| { config.instance_wrapper => data } }  # wrap envelope
 
   with_stub customer_name: "Default"                         # stub defaults
 end

@@ -13,17 +13,22 @@ RSpec.describe "Resource CRUD operations" do
     end
 
     class CrudTestApi::Resource < RestEasy::Resource
+      settings do
+        setting :wrapper_name
+      end
+
       before_parse do |api_data|
-        api_data[resource_name]
+        api_data[config.wrapper_name]
       end
 
       after_serialise do |api_data|
-        { resource_name => api_data }
+        { config.wrapper_name => api_data }
       end
     end
 
     class CrudTestApi::Invoice < CrudTestApi::Resource
       endpoint_path "invoices"
+      config.wrapper_name = "Invoice"
 
       key :document_number, Integer, :read_only
       attr :customer_name, String, :required

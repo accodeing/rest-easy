@@ -16,18 +16,23 @@ RSpec.describe "Resource inheritance chain" do
 
     # API-level base resource with shared behaviour
     class InheritanceTestApi::Resource < RestEasy::Resource
+      settings do
+        setting :wrapper_name
+      end
+
       before_parse do |api_data|
-        api_data[resource_name]
+        api_data[config.wrapper_name]
       end
 
       after_serialise do |api_data|
-        { resource_name => api_data }
+        { config.wrapper_name => api_data }
       end
     end
 
     # Endpoint-specific resource
     class InheritanceTestApi::Invoice < InheritanceTestApi::Resource
       endpoint_path "invoices"
+      config.wrapper_name = "Invoice"
 
       key :id, Integer, :read_only
       attr :name, String
@@ -35,6 +40,7 @@ RSpec.describe "Resource inheritance chain" do
 
     class InheritanceTestApi::Customer < InheritanceTestApi::Resource
       endpoint_path "customers"
+      config.wrapper_name = "Customer"
 
       key :id, Integer, :read_only
       attr :company_name, String
@@ -112,6 +118,7 @@ RSpec.describe "Resource inheritance chain" do
 
       class InheritanceTestApi::Order < InheritanceTestApi::Document
         endpoint_path "orders"
+        config.wrapper_name = "Order"
 
         key :id, Integer, :read_only
         attr :total, Float

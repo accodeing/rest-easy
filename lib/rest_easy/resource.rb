@@ -93,25 +93,6 @@ module RestEasy
 
       alias_method :endpoint_path, :path
 
-      # -- name / resource_name ------------------------------------------
-      # Returns the API-facing resource name, derived from the class name
-      # using the attribute convention (e.g. "Invoice" for PascalCase).
-      # Call ruby_class_name to get the original Module#name.
-
-      def name(value = :__unset__)
-        if value == :__unset__
-          @resource_name || derive_resource_name
-        else
-          @resource_name = value.to_s
-        end
-      end
-
-      alias_method :resource_name, :name
-
-      def ruby_class_name
-        ::Module.instance_method(:name).bind_call(self)
-      end
-
       # -- metadata ------------------------------------------------------
 
       def metadata(**kwargs)
@@ -141,7 +122,7 @@ module RestEasy
       end
 
       def __get_parent
-        class_name = ruby_class_name
+        class_name = name
         return nil unless class_name
 
         parts = class_name.split("::")
@@ -438,25 +419,6 @@ module RestEasy
         end
       end
 
-      def derive_resource_name
-        # Get the original Ruby class name, bypassing our name override
-        class_name = ruby_class_name
-        return nil unless class_name
-
-        # Demodularise: "TestApi::TermsOfPayment" → "TermsOfPayment"
-        base = class_name.split("::").last
-        return nil unless base
-
-        # Convert to snake_case symbol: "TermsOfPayment" → :terms_of_payment
-        snake = base.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
-                    .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-                    .downcase
-                    .to_sym
-
-        # Apply the attribute convention: :terms_of_payment → "TermsOfPayment"
-        attribute_convention.serialise(snake)
-      end
-
       def resolve_type(type)
         return nil if type.nil?
 
@@ -472,10 +434,6 @@ module RestEasy
     # ── Instance ─────────────────────────────────────────────────────────
 
     # Delegate class DSL methods so hooks can call them via instance_exec
-    def resource_name
-      self.class.resource_name
-    end
-
     def endpoint_path
       self.class.endpoint_path
     end
@@ -661,7 +619,7 @@ module RestEasy
 
       api_data.each_key do |api_key|
         unless known_api_keys.include?(api_key)
-          warn "RestEasy: unknown API field '#{api_key}' in #{klass.ruby_class_name || 'Resource'}. " \
+          warn "RestEasy: unknown API field '#{api_key}' in #{klass.name || 'Resource'}. " \
                "Declare it with attr, or silence this warning with ignore."
         end
       end

@@ -32,20 +32,6 @@ RSpec.describe RestEasy::Resource do
       end
     end
 
-    describe "name" do
-      it "defaults to convention-aware name derived from class name" do
-        stub_const("TestApi::TermsOfPayment", Class.new(described_class))
-        expect(TestApi::TermsOfPayment.name).to eq("TermsOfPayment")
-      end
-
-      it "can be set explicitly" do
-        resource = Class.new(described_class) do
-          name "custom_name"
-        end
-
-        expect(resource.resource_name).to eq("custom_name")
-      end
-    end
   end
 
   # ── Metadata defaults ─────────────────────────────────────────────────

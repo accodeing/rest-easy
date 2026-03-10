@@ -170,12 +170,15 @@ module RestEasy
           attribute_api_name = attribute_convention.serialise(attribute_model_name)
         end
 
-        # Extract type (non-Symbol) and flags (Symbols)
+        # Extract type (non-Symbol), flags (Symbols), and optional mapper object
         type = nil
         flags = []
+        mapper = nil
         args.each do |arg|
           if arg.is_a?(::Symbol)
             flags << arg
+          elsif arg.respond_to?(:parse) && arg.respond_to?(:serialise)
+            mapper = arg
           else
             type = resolve_type(arg)
           end
@@ -183,12 +186,15 @@ module RestEasy
 
         raise AttributeError, "Attribute :#{attribute_model_name} must have a type" if type.nil?
 
-        # Handle block DSL for custom parse/serialise
+        # Handle mapper object or block DSL for custom parse/serialise
         parse_block = nil
         serialise_block = nil
         source_fields = []
         target_fields = []
-        if block
+        if mapper
+          parse_block = mapper.method(:parse)
+          serialise_block = mapper.method(:serialise)
+        elsif block
           block_params = block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
 
           if block_params.any?

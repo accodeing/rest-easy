@@ -380,6 +380,39 @@ RSpec.describe RestEasy::Resource do
         expect(serialised["raw_field"]).to eq("HELLO")
       end
     end
+
+    describe "custom parse/serialise with mapper object" do
+      before do
+        # A mapper module with parse and serialise methods
+        mapper = Module.new do
+          def self.parse(raw_value)
+            raw_value.strip.downcase
+          end
+
+          def self.serialise(value)
+            value.upcase
+          end
+        end
+
+        @resource_class = Class.new(described_class) do
+          using RestEasy::Refinements
+
+          attr :raw_field <=> :clean_field, String, mapper
+        end
+      end
+
+      it "applies mapper parse logic" do
+        instance = @resource_class.parse({ "raw_field" => "  HELLO  " })
+        expect(instance.clean_field).to eq("hello")
+      end
+
+      it "applies mapper serialise logic" do
+        instance = @resource_class.parse({ "raw_field" => "  HELLO  " })
+        serialised = instance.serialise
+
+        expect(serialised["raw_field"]).to eq("HELLO")
+      end
+    end
   end
 
   # ── key ────────────────────────────────────────────────────────────────

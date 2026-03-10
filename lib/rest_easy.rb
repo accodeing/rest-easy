@@ -9,15 +9,13 @@ require "zeitwerk"
 
 loader = Zeitwerk::Loader.for_gem
 loader.ignore("#{__dir__}/__rest_easy")
+loader.ignore("#{__dir__}/rest_easy/__*.rb")
 loader.inflector.inflect(
   "psk" => "PSK"
 )
 loader.setup
 
 module RestEasy
-  Application.register("rest_easy.logger", ->(msg) { puts "RestEasy: #{msg}" })
-  Application.register("rest_easy.loader", Loader)
-
   # Make Boolean available as a bare type constant (Ruby has no built-in Boolean)
   ::Object.const_set(:Boolean, Dry::Types["params.bool"]) unless defined?(::Boolean)
 
@@ -174,21 +172,31 @@ module RestEasy
 
   # ── Module setup ─────────────────────────────────────────────────────
 
+  CHECK_ANCESTORS = false
+
   class << self
     def extended(base)
       super
-      # Make sure we are not allowing double registrations
-      if base.const_defined?("Application")
-        raise StandardError, "Double registration of #{base}, or you have a constant named 'Application' in your main module."
+
+      # Guard against double registration and constant collisions
+      if base.const_defined?(:ExtendedByRestEasy, CHECK_ANCESTORS)
+        raise Error, "Double registration of #{base}."
       end
-      # "Clone" application class to give caller its own namespaced instance
+
+      %i[Application Settings Deps].each do |name|
+        if base.const_defined?(name, CHECK_ANCESTORS)
+          raise Error, "#{base} already defines #{name}. RestEasy needs this constant."
+        end
+      end
+
+      # Clone application and settings so each API module gets its own state.
       application = Class.new(Application)
       settings = Class.new(Settings)
 
-      base.const_set("Deps", Dry::AutoInject(application))
-      base.const_set("Application", application)
-      base.const_set("Settings", settings)
-      base.const_set("ExtendedByRestEasy", true)
+      base.const_set(:Deps, Dry::AutoInject(application))
+      base.const_set(:Application, application)
+      base.const_set(:Settings, settings)
+      base.const_set(:ExtendedByRestEasy, true)
       base.extend ClassMethods
     end
   end

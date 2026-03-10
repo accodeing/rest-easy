@@ -5,6 +5,5 @@ module RestEasy
     extend Dry::Configurable
 
     config.root = Pathname('./')
-    config.resolver = Resolver.new
   end
 end

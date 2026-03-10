@@ -413,6 +413,84 @@ RSpec.describe RestEasy::Resource do
         expect(serialised["raw_field"]).to eq("HELLO")
       end
     end
+
+    describe "mapper object with merge (many API fields → one model attribute)" do
+      before do
+        mapper = Module.new do
+          def self.parse(first_name, last_name)
+            "#{first_name} #{last_name}"
+          end
+
+          def self.serialise(full_name)
+            full_name.split(" ", 2)
+          end
+        end
+
+        @resource_class = Class.new(described_class) do
+          attr :first_name, String
+          attr :last_name, String
+          attr :full_name, String, mapper
+        end
+      end
+
+      it "detects source_fields from mapper parse params" do
+        attr_def = @resource_class.all_attribute_definitions[:full_name]
+        expect(attr_def.synthetic?).to be true
+        expect(attr_def.source_fields).to eq([:first_name, :last_name])
+      end
+
+      it "merges API fields into one model attribute" do
+        instance = @resource_class.parse({
+          "FirstName" => "Jonas",
+          "LastName" => "Erlandsson"
+        })
+
+        expect(instance.full_name).to eq("Jonas Erlandsson")
+      end
+
+      it "splits back to API fields on serialise" do
+        instance = @resource_class.parse({
+          "FirstName" => "Jonas",
+          "LastName" => "Erlandsson"
+        })
+
+        serialised = instance.serialise
+        expect(serialised["FirstName"]).to eq("Jonas")
+        expect(serialised["LastName"]).to eq("Erlandsson")
+      end
+    end
+
+    describe "mapper object with multi-param serialise (many model attrs → one API field)" do
+      before do
+        mapper = Module.new do
+          def self.parse(raw_value)
+            raw_value
+          end
+
+          def self.serialise(street, city)
+            "#{street}, #{city}"
+          end
+        end
+
+        @resource_class = Class.new(described_class) do
+          attr :street, String
+          attr :city, String
+          attr :address, String, mapper
+        end
+      end
+
+      it "detects target_fields from mapper serialise params" do
+        attr_def = @resource_class.all_attribute_definitions[:address]
+        expect(attr_def.target_fields).to eq([:street, :city])
+      end
+
+      it "gathers model values by param names for serialise" do
+        instance = @resource_class.stub(street: "Main St", city: "Stockholm", address: "ignored")
+        serialised = instance.serialise
+
+        expect(serialised["Address"]).to eq("Main St, Stockholm")
+      end
+    end
   end
 
   # ── key ────────────────────────────────────────────────────────────────

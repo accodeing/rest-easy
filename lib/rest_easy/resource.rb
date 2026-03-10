@@ -194,6 +194,19 @@ module RestEasy
         if mapper
           parse_block = mapper.method(:parse)
           serialise_block = mapper.method(:serialise)
+
+          # Introspect mapper method parameters the same way we do blocks.
+          # This enables merge/split patterns with mapper objects.
+          parse_params = parse_block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
+          if parse_params.length > 1
+            flags << :synthetic unless flags.include?(:synthetic)
+            source_fields = parse_params.map { |_, pname| pname }
+          end
+
+          serialise_params = serialise_block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
+          if serialise_params.length > 1
+            target_fields = serialise_params.map { |_, pname| pname }
+          end
         elsif block
           block_params = block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
 

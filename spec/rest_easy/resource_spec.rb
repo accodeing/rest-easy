@@ -122,7 +122,7 @@ RSpec.describe RestEasy::Resource do
       end
 
       it "parses API data into model attributes" do
-        instance = @resource_class.new({ "Name" => "Alice", "Age" => 30, "Active" => true })
+        instance = @resource_class.parse({ "Name" => "Alice", "Age" => 30, "Active" => true })
 
         expect(instance.name).to eq("Alice")
         expect(instance.age).to eq(30)
@@ -270,7 +270,7 @@ RSpec.describe RestEasy::Resource do
             attribute_convention :PascalCase
 
             attr :document_number, Integer
-            attr '@urlTaxReductionList' <=> :tax_reduction_list_url, String, :optional
+            attr :tax_reduction_list_url <=> '@urlTaxReductionList', String, :optional
           end
 
           instance = resource_class.parse({
@@ -288,7 +288,7 @@ RSpec.describe RestEasy::Resource do
 
             attribute_convention :PascalCase
 
-            attr '@urlTaxReductionList' <=> :tax_reduction_list_url, String, :optional
+            attr :tax_reduction_list_url <=> '@urlTaxReductionList', String, :optional
           end
 
           instance = resource_class.parse({
@@ -307,7 +307,7 @@ RSpec.describe RestEasy::Resource do
         @resource_class = Class.new(described_class) do
           using RestEasy::Refinements
 
-          attr '@urlTaxReductionList' <=> :tax_reduction_list_url, String, :read_only, :optional
+          attr :tax_reduction_list_url <=> '@urlTaxReductionList', String, :read_only, :optional
         end
       end
 
@@ -357,7 +357,7 @@ RSpec.describe RestEasy::Resource do
         @resource_class = Class.new(described_class) do
           using RestEasy::Refinements
 
-          attr :raw_field <=> :clean_field, String do
+          attr :clean_field <=> :raw_field, String do
             parse do |raw_value|
               raw_value.strip.downcase
             end
@@ -397,7 +397,7 @@ RSpec.describe RestEasy::Resource do
         @resource_class = Class.new(described_class) do
           using RestEasy::Refinements
 
-          attr :raw_field <=> :clean_field, String, mapper
+          attr :clean_field <=> :raw_field, String, mapper
         end
       end
 
@@ -816,6 +816,28 @@ RSpec.describe RestEasy::Resource do
       end
     end
 
+    describe "before_parse with collections" do
+      it "unwraps envelope before parsing a collection" do
+        resource_class = Class.new(described_class) do
+          before_parse do |api_data|
+            api_data["Invoices"]
+          end
+
+          attr :name, String
+        end
+
+        results = resource_class.parse({ "Invoices" => [
+          { "Name" => "Invoice 1" },
+          { "Name" => "Invoice 2" }
+        ] })
+
+        expect(results).to be_an(Array)
+        expect(results.length).to eq(2)
+        expect(results[0].name).to eq("Invoice 1")
+        expect(results[1].name).to eq("Invoice 2")
+      end
+    end
+
     describe "hook inheritance" do
       it "inherits hooks from parent classes" do
         parent = Class.new(described_class) do
@@ -829,6 +851,29 @@ RSpec.describe RestEasy::Resource do
         end
 
         instance = child.parse({ "Wrapper" => { "Name" => "Test" } })
+        expect(instance.name).to eq("Test")
+      end
+
+      it "resolves config from the calling class in inherited before_parse hook" do
+        parent = Class.new(described_class) do
+          settings do
+            setting :instance_wrapper
+          end
+
+          before_parse do |api_data|
+            api_data[config.instance_wrapper]
+          end
+        end
+
+        child = Class.new(parent) do
+          configure do
+            instance_wrapper "Invoice"
+          end
+
+          attr :name, String
+        end
+
+        instance = child.parse({ "Invoice" => { "Name" => "Test" } })
         expect(instance.name).to eq("Test")
       end
     end
@@ -1044,6 +1089,69 @@ RSpec.describe RestEasy::Resource do
         resource_class.parse({ "Name" => "Too Long Name" })
       }.to raise_error(RestEasy::ConstraintError)
     end
+
+    context "via update" do
+      it "coerces values through the attribute type" do
+        resource_class = Class.new(described_class) do
+          attr :count, Integer
+        end
+
+        instance = resource_class.parse({ "Count" => 1 })
+        updated = instance.update(count: "42")
+        expect(updated.count).to eq(42)
+      end
+
+      it "rejects values that violate constraints" do
+        resource_class = Class.new(described_class) do
+          attr :name, String.constrained(max_size: 5)
+        end
+
+        instance = resource_class.parse({ "Name" => "Short" })
+        expect {
+          instance.update(name: "Too Long Name")
+        }.to raise_error(RestEasy::ConstraintError)
+      end
+
+      it "passes nil through without coercion" do
+        resource_class = Class.new(described_class) do
+          attr :name, String
+        end
+
+        instance = resource_class.parse({ "Name" => "Test" })
+        updated = instance.update(name: nil)
+        expect(updated.name).to be_nil
+      end
+    end
+
+    context "via stub" do
+      it "coerces values through the attribute type" do
+        resource_class = Class.new(described_class) do
+          attr :count, Integer
+        end
+
+        instance = resource_class.stub(count: "42")
+        expect(instance.count).to eq(42)
+      end
+
+      it "rejects values that violate constraints" do
+        resource_class = Class.new(described_class) do
+          attr :name, String.constrained(max_size: 5)
+        end
+
+        expect {
+          resource_class.stub(name: "Too Long Name")
+        }.to raise_error(RestEasy::ConstraintError)
+      end
+
+      it "passes nil through without coercion" do
+        resource_class = Class.new(described_class) do
+          attr :name, String
+        end
+
+        instance = resource_class.stub(name: nil)
+        expect(instance.name).to be_nil
+      end
+    end
   end
 
   # ── Settings (Dry::Configurable on Resource) ──────────────────────────
@@ -1155,6 +1263,37 @@ RSpec.describe RestEasy::Resource do
       end
 
       instance = resource.parse({ "Name" => "Test" })
+      expect(instance.config.wrapper).to be true
+    end
+
+    it "exposes configure-set values on instances" do
+      resource = Class.new(described_class) do
+        configure do
+          path "/invoices"
+        end
+        attr :name, String
+      end
+
+      instance = resource.parse({ "Name" => "Test" })
+      expect(instance.config.path).to eq("/invoices")
+    end
+
+    it "exposes inherited configure-set values on instances" do
+      parent = Class.new(described_class) do
+        settings do
+          setting :wrapper, default: false
+        end
+      end
+
+      child = Class.new(parent) do
+        configure do
+          wrapper true
+        end
+
+        attr :name, String
+      end
+
+      instance = child.parse({ "Name" => "Test" })
       expect(instance.config.wrapper).to be true
     end
   end

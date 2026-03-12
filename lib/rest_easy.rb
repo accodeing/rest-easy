@@ -71,8 +71,19 @@ module RestEasy
       self::Settings.config
     end
 
-    def configure
-      yield self::Settings.config if block_given?
+    def settings(&block)
+      self::Settings.class_eval(&block) if block_given?
+    end
+
+    def configure(&block)
+      if block_given?
+        if block.arity == 0
+          dsl = Resource::ConfigureDSL.new(self::Settings.config)
+          dsl.instance_eval(&block)
+        else
+          yield self::Settings.config
+        end
+      end
     end
 
     def connection(&block)

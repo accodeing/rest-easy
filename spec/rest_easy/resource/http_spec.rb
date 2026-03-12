@@ -14,10 +14,11 @@ RSpec.describe "HTTP integration" do
     class HttpTestApi::Resource < RestEasy::Resource
       settings do
         setting :wrapper_name
+        setting :collection_wrapper_name
       end
 
       before_parse do |api_data|
-        api_data[config.wrapper_name]
+        api_data[config.wrapper_name] || api_data[config.collection_wrapper_name]
       end
 
       after_serialise do |api_data|
@@ -29,6 +30,7 @@ RSpec.describe "HTTP integration" do
       configure do
         path "invoices"
         wrapper_name "Invoice"
+        collection_wrapper_name "Invoices"
       end
 
       key :document_number, Integer, :read_only
@@ -76,8 +78,8 @@ RSpec.describe "HTTP integration" do
       setup_test_connection(HttpTestApi) do |stub|
         stub.get("/v1/invoices") do
           [200, { "Content-Type" => "application/json" },
-           '[{"Invoice": {"DocumentNumber": 1, "CustomerName": "Acme", "Amount": 100.0}},
-             {"Invoice": {"DocumentNumber": 2, "CustomerName": "Beta", "Amount": 200.0}}]']
+           '{"Invoices": [{"DocumentNumber": 1, "CustomerName": "Acme", "Amount": 100.0},
+             {"DocumentNumber": 2, "CustomerName": "Beta", "Amount": 200.0}]}']
         end
       end
 

@@ -163,8 +163,8 @@ module RestEasy
       def attr(name_or_mapping, *args, &block)
         # Determine attribute_api_name and attribute_model_name
         if name_or_mapping.is_a?(::Array)
-          attribute_api_name = name_or_mapping[0].to_s
-          attribute_model_name = name_or_mapping[1].to_sym
+          attribute_model_name = name_or_mapping[0].to_sym
+          attribute_api_name = name_or_mapping[1].to_s
         else
           attribute_model_name = name_or_mapping.to_sym
           attribute_api_name = attribute_convention.serialise(attribute_model_name)
@@ -366,7 +366,14 @@ module RestEasy
       # ── Class-level operations ─────────────────────────────────────────
 
       def parse(api_data)
-        allocate.tap { |instance| instance.send(:init_from_api, api_data) }
+        hook = resolve_before_parse_hook
+        api_data = instance_exec(api_data, &hook) if hook
+
+        if api_data.is_a?(::Array)
+          api_data.map { |item| allocate.tap { |instance| instance.send(:init_from_api, item) } }
+        else
+          allocate.tap { |instance| instance.send(:init_from_api, api_data) }
+        end
       end
 
       def stub(**model_data)
@@ -384,10 +391,7 @@ module RestEasy
 
       def all
         response = get(path: config.path.to_s)
-        unless response.is_a?(::Array)
-          raise Error, "Expected Array from #{config.path}, got #{response.class}. Does the response need unwrapping in before_parse?"
-        end
-        response.map { |data| parse(data) }
+        parse(response)
       end
 
       def save(instance)
@@ -475,8 +479,8 @@ module RestEasy
 
     attr_reader :meta
 
-    def initialize(api_data = {})
-      init_from_api(api_data)
+    def initialize(model_data = {})
+      init_from_model(model_data)
     end
 
     def model
@@ -496,9 +500,20 @@ module RestEasy
       changes = changes.merge(kwargs) unless kwargs.empty?
       return self if changes.empty?
 
-      new_model = @model_attributes.merge(changes)
+      klass = self.class
+      coerced = {}
+      changes.each do |attr_name, value|
+        attr_def = klass.all_attribute_definitions[attr_name]
+        coerced[attr_name] = if attr_def && !value.nil?
+          attr_def.coerce(value)
+        else
+          value
+        end
+      end
+
+      new_model = @model_attributes.merge(coerced)
       new_instance = self.class.allocate
-      new_instance.send(:init_from_update, new_model, @api_data, changes)
+      new_instance.send(:init_from_update, new_model, @api_data, coerced)
       new_instance
     end
 
@@ -594,21 +609,10 @@ module RestEasy
     def init_from_api(api_data)
       klass = self.class
 
-      # Set up instance state so hooks have access to api, model, meta
       @api_data = api_data.is_a?(::Hash) ? api_data.dup : {}
       @model_attributes = {}
       @changes = {}
       @meta = Meta.new(new_record: false, saved: true, **klass.metadata)
-
-      # Run before_parse hook on the instance
-      # Input: raw api_data. Output: transformed api_data (e.g. unwrapped envelope).
-      hook = klass.resolve_before_parse_hook
-      if hook
-        api_data = instance_exec(api_data, &hook)
-      end
-
-      # Update shadow copy with possibly unwrapped data
-      @api_data = api_data.is_a?(::Hash) ? api_data.dup : {}
 
       return unless api_data.is_a?(::Hash)
 
@@ -670,9 +674,12 @@ module RestEasy
       @changes = {}
       @meta = Meta.new(new_record: true, saved: false, **klass.metadata)
 
-      # Set attributes from model data
-      klass.all_attribute_definitions.each do |model_name, _attr_def|
-        @model_attributes[model_name] = model_data[model_name] if model_data.key?(model_name)
+      # Set attributes from model data, coercing through the type
+      klass.all_attribute_definitions.each do |model_name, attr_def|
+        if model_data.key?(model_name)
+          value = model_data[model_name]
+          @model_attributes[model_name] = value.nil? ? nil : attr_def.coerce(value)
+        end
       end
     end
 

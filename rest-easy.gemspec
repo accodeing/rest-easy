@@ -6,12 +6,12 @@ require "rest_easy/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "rest-easy"
-  spec.authors       = ["Jonas Schubert Erlandsson"]
+  spec.authors       = ["Jonas Schubert Erlandsson","Claude Code"]
   spec.email         = ["jonas@accodeing.com"]
   spec.license       = "MIT"
   spec.version       = RestEasy::VERSION.dup
 
-  spec.summary       = "Boilerplate for REST API libraries, based on dry-rb"
+  spec.summary       = "Boilerplate for REST API libraries, using on dry-rb"
   spec.description   = spec.summary
   spec.homepage      = "https://github.com/accodeing/rest-easy"
   spec.files         = Dir["CHANGELOG.md", "LICENSE", "README.md", "dry-validation.gemspec", "lib/**/*", "config/*.yml"]

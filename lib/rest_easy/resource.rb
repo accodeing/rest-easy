@@ -7,6 +7,7 @@ module RestEasy
     extend Dry::Configurable
 
     setting :path
+    setting :debug, default: false
 
     # ── Types ─────────────────────────────────────────────────────────────
     # Include Types so the full Dry::Types vocabulary (Strict::String,
@@ -92,6 +93,29 @@ module RestEasy
 
       def attributes
         @data
+      end
+    end
+
+    class MetaCollector
+      def initialize
+        @data = {}
+      end
+
+      def to_h
+        @data
+      end
+
+      def method_missing(name, *args)
+        key = name.to_s
+        if key.end_with?("=")
+          @data[key.chomp("=").to_sym] = args.first
+        else
+          @data[name.to_sym]
+        end
+      end
+
+      def respond_to_missing?(_name, _include_private = false)
+        true
       end
     end
 
@@ -326,6 +350,10 @@ module RestEasy
         parent.merge(own_attribute_definitions)
       end
 
+      def attributes_with_flag(flag)
+        all_attribute_definitions.select { |_, attr_def| attr_def.flags.include?(flag) }
+      end
+
       def all_ignored_fields
         parent = superclass.respond_to?(:all_ignored_fields) ? superclass.all_ignored_fields : []
         parent + own_ignored_fields
@@ -366,13 +394,19 @@ module RestEasy
       # ── Class-level operations ─────────────────────────────────────────
 
       def parse(api_data)
+        meta_collector = MetaCollector.new
+
         hook = resolve_before_parse_hook
-        api_data = instance_exec(api_data, &hook) if hook
+        if hook
+          api_data = instance_exec(api_data, meta_collector, &hook)
+        end
+
+        collected_meta = meta_collector.to_h
 
         if api_data.is_a?(::Array)
-          api_data.map { |item| allocate.tap { |instance| instance.send(:init_from_api, item) } }
+          api_data.map { |item| allocate.tap { |instance| instance.send(:init_from_api, item, collected_meta) } }
         else
-          allocate.tap { |instance| instance.send(:init_from_api, api_data) }
+          allocate.tap { |instance| instance.send(:init_from_api, api_data, collected_meta) }
         end
       end
 
@@ -424,16 +458,16 @@ module RestEasy
 
       # HTTP primitives — delegate to the parent API module's connection
 
-      def get(path:, params: {})
-        parent.get(path:, params:)
+      def get(path:, params: {}, headers: {})
+        parent.get(path:, params:, headers:)
       end
 
-      def post(path:, body: nil)
-        parent.post(path:, body:)
+      def post(path:, body: nil, headers: {})
+        parent.post(path:, body:, headers:)
       end
 
-      def put(path:, body: nil)
-        parent.put(path:, body:)
+      def put(path:, body: nil, headers: {})
+        parent.put(path:, body:, headers:)
       end
 
       private
@@ -606,13 +640,13 @@ module RestEasy
       @model_attributes
     end
 
-    def init_from_api(api_data)
+    def init_from_api(api_data, extra_meta = {})
       klass = self.class
 
       @api_data = api_data.is_a?(::Hash) ? api_data.dup : {}
       @model_attributes = {}
       @changes = {}
-      @meta = Meta.new(new_record: false, saved: true, **klass.metadata)
+      @meta = Meta.new(new_record: false, saved: true, **klass.metadata, **extra_meta)
 
       return unless api_data.is_a?(::Hash)
 
@@ -642,20 +676,40 @@ module RestEasy
         end
       end
 
-      # Warn about API fields that are neither declared attrs nor explicitly ignored
-      convention = klass.attribute_convention
-      known_api_keys = klass.all_attribute_definitions.values.flat_map do |ad|
-        keys = [ad.api_name]
-        ad.source_fields.each { |sf| keys << convention.serialise(sf) }
-        keys
-      end
-      ignored_api_keys = klass.all_ignored_fields.map { |f| convention.serialise(f) }
-      known_api_keys.concat(ignored_api_keys)
+      if config.debug
+        # Warn about API fields that are neither declared attrs nor explicitly ignored
+        convention = klass.attribute_convention
+        known_api_keys = klass.all_attribute_definitions.values.flat_map do |ad|
+          keys = [ad.api_name]
+          ad.source_fields.each { |sf| keys << convention.serialise(sf) }
+          keys
+        end
+        ignored_api_keys = klass.all_ignored_fields.map { |f| convention.serialise(f) }
+        known_api_keys.concat(ignored_api_keys)
 
-      api_data.each_key do |api_key|
-        unless known_api_keys.include?(api_key)
-          warn "RestEasy: unknown API field '#{api_key}' in #{klass.name || 'Resource'}. " \
-               "Declare it with attr, or silence this warning with ignore."
+        api_data.each_key do |api_key|
+          unless known_api_keys.include?(api_key)
+            warn "RestEasy: unknown API field '#{api_key}' in #{klass.name || 'Resource'}. " \
+                 "Declare it with attr, or silence this warning with ignore."
+          end
+        end
+
+        # Warn about declared attributes missing from the API response
+        klass.all_attribute_definitions.each do |model_name, attr_def|
+          next if attr_def.required? # already raises
+
+          api_keys_to_check = if attr_def.source_fields.any?
+                                attr_def.source_fields.map { |sf| convention.serialise(sf) }
+                              else
+                                [attr_def.api_name]
+                              end
+
+          api_keys_to_check.each do |api_key|
+            unless api_data.key?(api_key)
+              warn "RestEasy: expected API field '#{api_key}' for attr :#{model_name} " \
+                   "in #{klass.name || 'Resource'}, but it was not present in the response."
+            end
+          end
         end
       end
 

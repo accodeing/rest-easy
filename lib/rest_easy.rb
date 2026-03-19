@@ -107,25 +107,25 @@ module RestEasy
 
     # ── HTTP primitives ─────────────────────────────────────────────────
 
-    def get(path:, params: {})
-      request_with_auth(:get, path, params:)
+    def get(path:, params: {}, headers: {})
+      request_with_auth(:get, path, params:, headers:)
     end
 
-    def post(path:, body: nil)
-      request_with_auth(:post, path, body:)
+    def post(path:, body: nil, headers: {})
+      request_with_auth(:post, path, body:, headers:)
     end
 
-    def put(path:, body: nil)
-      request_with_auth(:put, path, body:)
+    def put(path:, body: nil, headers: {})
+      request_with_auth(:put, path, body:, headers:)
     end
 
-    def delete(path:)
-      request_with_auth(:delete, path)
+    def delete(path:, headers: {})
+      request_with_auth(:delete, path, headers:)
     end
 
     private
 
-    def request_with_auth(method, path, body: nil, params: {})
+    def request_with_auth(method, path, body: nil, params: {}, headers: {})
       auth = config.authentication
       max_retries = config.max_retries
       attempts = 0
@@ -133,6 +133,7 @@ module RestEasy
       begin
         response = faraday_connection.run_request(method, path, body, nil) do |req|
           req.params.update(params) if params.any?
+          headers.each { |k, v| req.headers[k] = v }
           auth.apply(req)
         end
 

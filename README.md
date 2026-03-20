@@ -1,5 +1,7 @@
 # RestEasy
 
+[![Gem Version](https://badge.fury.io/rb/rest-easy.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/rest-easy)
+
 A Ruby framework for building REST API client libraries. Define your resources with a clean DSL, and RestEasy handles naming conventions, type coercion, serialisation, authentication, and HTTP plumbing — so you can ship an API gem with minimal boilerplate.
 
 Built on [dry-rb](https://dry-rb.org/) (Types, Configurable) and [Faraday](https://lostisland.github.io/faraday/).

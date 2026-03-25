@@ -9,6 +9,11 @@ module RestEasy
     setting :path
     setting :debug, default: false
 
+    setting :conversions do
+      setting :query_parameters  # nil default — falls back to parent module
+      setting :json_attributes   # nil default — falls back to parent module
+    end
+
     # ── Types ─────────────────────────────────────────────────────────────
     # Include Types so the full Dry::Types vocabulary (Strict::String,
     # Coercible::Integer, Params::Date, etc.) is available without prefix.
@@ -143,16 +148,35 @@ module RestEasy
         end
       end
 
-      # -- attribute_convention ------------------------------------------
+      # -- conversions ---------------------------------------------------
+
+      def resolved_conversions
+        @resolved_conversions ||= begin
+          qp = config.conversions.query_parameters ||
+               parent&.config&.conversions&.query_parameters ||
+               :snake_case
+
+          ja = config.conversions.json_attributes ||
+               parent&.config&.conversions&.json_attributes ||
+               parent&.config&.attribute_convention || # BC: old setting as fallback
+               :snake_case
+
+          Conventions::ConventionPair.new(
+            query_parameters: Conventions.resolve(qp),
+            json_attributes: Conventions.resolve(ja)
+          )
+        end
+      end
+
+      # -- attribute_convention (deprecated) -------------------------------
 
       def attribute_convention(value = nil)
         if value
-          @attribute_convention = Conventions.resolve(value)
-        else
-          @attribute_convention ||
-            (superclass.respond_to?(:attribute_convention) ? superclass.attribute_convention : nil) ||
-            Conventions.resolve(parent&.config&.attribute_convention || :PascalCase)
+          warn "RestEasy: attribute_convention is deprecated, use `configure { conversions.json_attributes = #{value.inspect} }` instead"
+          config.conversions.json_attributes = value
+          @resolved_conversions = nil # bust memoization
         end
+        resolved_conversions.json_attributes
       end
 
       private
@@ -191,7 +215,7 @@ module RestEasy
           attribute_api_name = name_or_mapping[1].to_s
         else
           attribute_model_name = name_or_mapping.to_sym
-          attribute_api_name = attribute_convention.serialise(attribute_model_name)
+          attribute_api_name = resolved_conversions.json_attributes.serialise(attribute_model_name)
         end
 
         # Extract type (non-Symbol), flags (Symbols), and optional mapper object
@@ -459,6 +483,10 @@ module RestEasy
       # HTTP primitives — delegate to the parent API module's connection
 
       def get(path:, params: {}, headers: {})
+        if params.any?
+          conv = resolved_conversions.query_parameters
+          params = params.transform_keys { |k| conv.serialise(k) }
+        end
         parent.get(path:, params:, headers:)
       end
 
@@ -578,7 +606,7 @@ module RestEasy
           serialised = attr_def.serialise_value(value)
           if serialised.is_a?(::Array)
             # Array return: zip with source field API names
-            convention = klass.attribute_convention
+            convention = klass.resolved_conversions.json_attributes
             attr_def.source_fields.zip(serialised).each do |field_name, field_value|
               api_key = convention.serialise(field_name)
               result[api_key] = field_value

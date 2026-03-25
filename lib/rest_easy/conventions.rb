@@ -56,6 +56,8 @@ module RestEasy
       snake_case: SnakeCase.new
     }.freeze
 
+    ConventionPair = Struct.new(:query_parameters, :json_attributes, keyword_init: true)
+
     def self.resolve(convention)
       case convention
       when Symbol

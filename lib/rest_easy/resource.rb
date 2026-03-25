@@ -150,19 +150,18 @@ module RestEasy
 
       # -- conversions ---------------------------------------------------
 
-      def resolved_conversions
-        @resolved_conversions ||= begin
-          qp = config.conversions.query_parameters ||
-               parent&.config&.conversions&.query_parameters
+      def json_attribute_converter
+        @json_attribute_converter ||= Conventions.resolve(
+          config.conversions.json_attributes ||
+          parent&.config&.conversions&.json_attributes
+        )
+      end
 
-          ja = config.conversions.json_attributes ||
-               parent&.config&.conversions&.json_attributes
-
-          Conventions::ConventionPair.new(
-            query_parameters: Conventions.resolve(qp),
-            json_attributes: Conventions.resolve(ja)
-          )
-        end
+      def query_parameter_converter
+        @query_parameter_converter ||= Conventions.resolve(
+          config.conversions.query_parameters ||
+          parent&.config&.conversions&.query_parameters
+        )
       end
 
       # -- attribute_convention (deprecated) -------------------------------
@@ -171,9 +170,9 @@ module RestEasy
         if value
           warn "RestEasy: attribute_convention is deprecated, use `configure { conversions.json_attributes = #{value.inspect} }` instead"
           config.conversions.json_attributes = value
-          @resolved_conversions = nil # bust memoization
+          @json_attribute_converter = nil # bust memoization
         end
-        resolved_conversions.json_attributes
+        json_attribute_converter
       end
 
       private
@@ -212,7 +211,7 @@ module RestEasy
           attribute_api_name = name_or_mapping[1].to_s
         else
           attribute_model_name = name_or_mapping.to_sym
-          attribute_api_name = resolved_conversions.json_attributes.serialise(attribute_model_name)
+          attribute_api_name = json_attribute_converter.serialise(attribute_model_name)
         end
 
         # Extract type (non-Symbol), flags (Symbols), and optional mapper object
@@ -481,7 +480,7 @@ module RestEasy
 
       def get(path:, params: {}, headers: {})
         if params.any?
-          conv = resolved_conversions.query_parameters
+          conv = query_parameter_converter
           params = params.transform_keys { |k| conv.serialise(k) }
         end
         parent.get(path:, params:, headers:)
@@ -603,7 +602,7 @@ module RestEasy
           serialised = attr_def.serialise_value(value)
           if serialised.is_a?(::Array)
             # Array return: zip with source field API names
-            convention = klass.resolved_conversions.json_attributes
+            convention = klass.json_attribute_converter
             attr_def.source_fields.zip(serialised).each do |field_name, field_value|
               api_key = convention.serialise(field_name)
               result[api_key] = field_value

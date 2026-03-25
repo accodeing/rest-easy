@@ -39,13 +39,11 @@ RSpec.describe "Resource conversions" do
     end
 
     it "resolves json_attributes from module config" do
-      conv = ConvTestApi::Invoice.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
+      expect(ConvTestApi::Invoice.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
     it "resolves query_parameters from module config" do
-      conv = ConvTestApi::Invoice.resolved_conversions
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::CamelCase)
+      expect(ConvTestApi::Invoice.query_parameter_converter).to be_a(RestEasy::Conventions::CamelCase)
     end
 
     it "parses API data using json_attributes convention" do
@@ -125,15 +123,13 @@ RSpec.describe "Resource conversions" do
     end
 
     it "inherits module-level convention when not overridden" do
-      conv = ResOverrideApi::Standard.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::CamelCase)
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::CamelCase)
+      expect(ResOverrideApi::Standard.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
+      expect(ResOverrideApi::Standard.query_parameter_converter).to be_a(RestEasy::Conventions::CamelCase)
     end
 
     it "uses resource-level convention when overridden" do
-      conv = ResOverrideApi::Custom.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::PascalCase)
+      expect(ResOverrideApi::Custom.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
+      expect(ResOverrideApi::Custom.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
     it "parses with inherited convention" do
@@ -147,11 +143,8 @@ RSpec.describe "Resource conversions" do
     end
 
     it "does not affect sibling resources" do
-      standard_conv = ResOverrideApi::Standard.resolved_conversions
-      custom_conv = ResOverrideApi::Custom.resolved_conversions
-
-      expect(standard_conv.json_attributes).to be_a(RestEasy::Conventions::CamelCase)
-      expect(custom_conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
+      expect(ResOverrideApi::Standard.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
+      expect(ResOverrideApi::Custom.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
   end
 
@@ -183,13 +176,11 @@ RSpec.describe "Resource conversions" do
     end
 
     it "uses overridden query_parameters" do
-      conv = PartialApi::Resource.resolved_conversions
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::PascalCase)
+      expect(PartialApi::Resource.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
     it "inherits json_attributes from module" do
-      conv = PartialApi::Resource.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::CamelCase)
+      expect(PartialApi::Resource.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
     end
   end
 
@@ -217,9 +208,8 @@ RSpec.describe "Resource conversions" do
     end
 
     it "uses different conventions for attributes and parameters" do
-      conv = MixedApi::Item.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::CamelCase)
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::PascalCase)
+      expect(MixedApi::Item.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
+      expect(MixedApi::Item.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
     it "serialises attributes as camelCase" do
@@ -268,13 +258,11 @@ RSpec.describe "Resource conversions" do
       end
 
       it "propagates to conversions.json_attributes" do
-        conv = BCModuleApi::Invoice.resolved_conversions
-        expect(conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
+        expect(BCModuleApi::Invoice.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
       end
 
       it "defaults query_parameters to snake_case" do
-        conv = BCModuleApi::Invoice.resolved_conversions
-        expect(conv.query_parameters).to be_a(RestEasy::Conventions::SnakeCase)
+        expect(BCModuleApi::Invoice.query_parameter_converter).to be_a(RestEasy::Conventions::SnakeCase)
       end
 
       it "parses with the propagated convention" do
@@ -291,7 +279,7 @@ RSpec.describe "Resource conversions" do
           resource_class.attribute_convention :camelCase
         }.to output(/deprecated/).to_stderr
 
-        expect(resource_class.resolved_conversions.json_attributes).to be_a(RestEasy::Conventions::CamelCase)
+        expect(resource_class.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
       end
 
       it "still works as a getter" do
@@ -325,13 +313,11 @@ RSpec.describe "Resource conversions" do
     end
 
     it "defaults json_attributes to snake_case" do
-      conv = DefaultApi::Thing.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::SnakeCase)
+      expect(DefaultApi::Thing.json_attribute_converter).to be_a(RestEasy::Conventions::SnakeCase)
     end
 
     it "defaults query_parameters to snake_case" do
-      conv = DefaultApi::Thing.resolved_conversions
-      expect(conv.query_parameters).to be_a(RestEasy::Conventions::SnakeCase)
+      expect(DefaultApi::Thing.query_parameter_converter).to be_a(RestEasy::Conventions::SnakeCase)
     end
   end
 end

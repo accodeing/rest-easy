@@ -248,41 +248,6 @@ RSpec.describe "Resource conversions" do
   # ── Backwards compatibility ─────────────────────────────────────────
 
   describe "backwards compatibility" do
-    describe "module-level attribute_convention" do
-      before(:all) do
-        module BCModuleApi
-          extend RestEasy
-
-          configure do |config|
-            config.attribute_convention = :PascalCase
-          end
-        end
-
-        class BCModuleApi::Invoice < RestEasy::Resource
-          attr :customer_name, String
-        end
-      end
-
-      after(:all) do
-        Object.send(:remove_const, :BCModuleApi)
-      end
-
-      it "resolves json_attributes from old attribute_convention setting" do
-        conv = BCModuleApi::Invoice.resolved_conversions
-        expect(conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
-      end
-
-      it "defaults query_parameters to snake_case" do
-        conv = BCModuleApi::Invoice.resolved_conversions
-        expect(conv.query_parameters).to be_a(RestEasy::Conventions::SnakeCase)
-      end
-
-      it "parses with the old convention" do
-        instance = BCModuleApi::Invoice.parse({ "CustomerName" => "Acme" })
-        expect(instance.customer_name).to eq("Acme")
-      end
-    end
-
     describe "resource-level attribute_convention" do
       it "sets json_attributes and emits a deprecation warning" do
         resource_class = Class.new(RestEasy::Resource)
@@ -324,11 +289,9 @@ RSpec.describe "Resource conversions" do
       Object.send(:remove_const, :DefaultApi)
     end
 
-    it "falls back to attribute_convention default for json_attributes" do
-      # The old attribute_convention defaults to :PascalCase on Settings,
-      # so json_attributes picks that up via the BC fallback
+    it "defaults json_attributes to snake_case" do
       conv = DefaultApi::Thing.resolved_conversions
-      expect(conv.json_attributes).to be_a(RestEasy::Conventions::PascalCase)
+      expect(conv.json_attributes).to be_a(RestEasy::Conventions::SnakeCase)
     end
 
     it "defaults query_parameters to snake_case" do

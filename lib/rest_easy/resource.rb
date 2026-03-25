@@ -153,13 +153,10 @@ module RestEasy
       def resolved_conversions
         @resolved_conversions ||= begin
           qp = config.conversions.query_parameters ||
-               parent&.config&.conversions&.query_parameters ||
-               :snake_case
+               parent&.config&.conversions&.query_parameters
 
           ja = config.conversions.json_attributes ||
-               parent&.config&.conversions&.json_attributes ||
-               parent&.config&.attribute_convention || # BC: old setting as fallback
-               :snake_case
+               parent&.config&.conversions&.json_attributes
 
           Conventions::ConventionPair.new(
             query_parameters: Conventions.resolve(qp),

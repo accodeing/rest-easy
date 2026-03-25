@@ -12,8 +12,8 @@ module RestEasy
     setting :attribute_convention, default: :PascalCase, reader: true # deprecated, kept for BC
 
     setting :conversions do
-      setting :query_parameters, reader: true  # nil default — :snake_case resolved in Resource
-      setting :json_attributes, reader: true   # nil default — :snake_case resolved in Resource
+      setting :query_parameters, default: :snake_case, reader: true
+      setting :json_attributes, default: :snake_case, reader: true
     end
   end
 end

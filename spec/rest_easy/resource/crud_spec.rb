@@ -7,7 +7,7 @@ RSpec.describe "Resource CRUD operations" do
 
       configure do |config|
         config.base_url = "https://api.example.com/v1"
-        config.attribute_convention = :PascalCase
+        config.conversions.json_attributes = :PascalCase
         config.max_retries = 3
       end
     end

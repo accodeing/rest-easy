@@ -8,6 +8,7 @@ RSpec.describe "HTTP integration" do
       configure do |config|
         config.base_url = "https://api.example.com/v1"
         config.max_retries = 3
+        config.conversions.json_attributes = :PascalCase
       end
     end
 

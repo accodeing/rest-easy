@@ -36,7 +36,7 @@ module Acme
   configure do
     base_url "https://api.acme.com/v1"
     authentication RestEasy::Auth::PSK.new(api_key: ENV["ACME_API_KEY"])
-    attribute_convention :PascalCase
+    conversions.json_attributes = :PascalCase
   end
 end
 
@@ -87,19 +87,21 @@ module Fortnox
     base_url "https://api.fortnox.se/3"
     max_retries 3
     authentication RestEasy::Auth::PSK.new(api_key: ENV["FORTNOX_KEY"])
-    attribute_convention :PascalCase
+    conversions.json_attributes = :PascalCase
+    conversions.query_parameters = :PascalCase
   end
 end
 ```
 
 ### Available settings
 
-| Setting                | Default                    | Description                              |
-|------------------------|----------------------------|------------------------------------------|
-| `base_url`             | `"https://example.com"`    | Base URL for all requests                |
-| `max_retries`          | `3`                        | Retry count on request failure           |
-| `authentication`       | `Auth::Null.new`           | Authentication strategy                  |
-| `attribute_convention` | `:PascalCase`              | Naming convention for API field mapping  |
+| Setting                          | Default                    | Description                                       |
+|----------------------------------|----------------------------|---------------------------------------------------|
+| `base_url`                       | `"https://example.com"`    | Base URL for all requests                         |
+| `max_retries`                    | `3`                        | Retry count on request failure                    |
+| `authentication`                 | `Auth::Null.new`           | Authentication strategy                           |
+| `conversions.json_attributes`    | `:snake_case`              | Naming convention for JSON response/request fields|
+| `conversions.query_parameters`   | `:snake_case`              | Naming convention for query parameter keys        |
 
 ### Faraday middleware
 
@@ -191,7 +193,7 @@ The full `Dry::Types` vocabulary is available inside resource bodies — `Strict
 
 ### Naming conventions
 
-RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention:
+RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention. The `conversions` config controls this independently for JSON attributes and query parameters:
 
 | Convention    | Ruby attr          | API field            |
 |---------------|--------------------|----------------------|
@@ -199,11 +201,26 @@ RestEasy automatically maps between Ruby's `snake_case` attribute names and the 
 | `:camelCase`  | `:document_number` | `"documentNumber"`   |
 | `:snake_case` | `:document_number` | `"document_number"`  |
 
-Set the convention at the module level (applies to all resources) or override per resource:
+Set conventions at the module level (applies to all resources):
 
 ```ruby
-attribute_convention :camelCase
+configure do
+  conversions.json_attributes = :camelCase
+  conversions.query_parameters = :PascalCase
+end
 ```
+
+Or override per resource:
+
+```ruby
+class MyAPI::Special < MyAPI::Resource
+  configure do
+    conversions.json_attributes = :PascalCase
+  end
+end
+```
+
+Query parameter keys are automatically transformed when calling `get` with `params:`. For example, with `query_parameters: :PascalCase`, `params: { sort_order: "asc" }` becomes `?SortOrder=asc` in the request.
 
 You can also provide a custom convention object with `parse(api_name)` and `serialise(model_name)` methods.
 
@@ -737,7 +754,7 @@ module MyAPI
     base_url "https://api.example.com/v1"
     max_retries 3
     authentication RestEasy::Auth::PSK.new(api_key: ENV["MY_API_KEY"])
-    attribute_convention :PascalCase
+    conversions.json_attributes = :PascalCase
   end
 end
 ```

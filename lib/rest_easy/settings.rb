@@ -9,7 +9,7 @@ module RestEasy
     setting :base_url, default: "https://example.com", reader: true
     setting :max_retries, default: 3, reader: true
     setting :authentication, default: Auth::Null.new, reader: true
-    setting :attribute_convention, default: :PascalCase, reader: true # deprecated, kept for BC
+    setting :attribute_convention # deprecated — propagated to conversions.json_attributes in configure
 
     setting :conversions do
       setting :query_parameters, default: :snake_case, reader: true

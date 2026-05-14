@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "rubygems"
-require "dry/inflector"
 require "dry/types"
 require "faraday"
 require "zeitwerk"

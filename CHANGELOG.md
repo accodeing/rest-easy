@@ -25,6 +25,10 @@
 
 - **`attribute_convention`** is deprecated in favour of `conversions.json_attributes`. The old setting continues to work and is respected as a fallback, but emits a deprecation warning when used at the Resource level. Module-level `attribute_convention` is silently supported for backwards compatibility.
 
+### Removed
+
+- **`dry-inflector` runtime dependency.** The gem never used `Dry::Inflector` — Zeitwerk's own inflector is the only one used.
+
 ## [1.0.0]
 
 Initial release.

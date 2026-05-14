@@ -86,6 +86,33 @@ RSpec.describe "Resource conversions" do
 
       expect(captured_params).to include("customerName" => "Test", "sortOrder" => "asc")
     end
+
+    it "does not mutate the caller-provided params hash" do
+      setup_test_connection(ConvTestApi) do |stub|
+        stub.get("/invoices") do
+          [200, { "Content-Type" => "application/json" }, "[]"]
+        end
+      end
+
+      params = { customer_name: "Test" }
+      ConvTestApi::Invoice.get(path: "invoices", params: params)
+
+      expect(params).to eq(customer_name: "Test")
+    end
+
+    it "accepts a frozen params hash without raising" do
+      setup_test_connection(ConvTestApi) do |stub|
+        stub.get("/invoices") do
+          [200, { "Content-Type" => "application/json" }, "[]"]
+        end
+      end
+
+      params = { customer_name: "Test" }.freeze
+
+      expect {
+        ConvTestApi::Invoice.get(path: "invoices", params: params)
+      }.not_to raise_error
+    end
   end
 
   # ── Resource-level override ─────────────────────────────────────────

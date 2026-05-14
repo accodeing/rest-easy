@@ -479,8 +479,8 @@ module RestEasy
       # HTTP primitives — delegate to the parent API module's connection
 
       def get(path:, params: {}, headers: {})
-        params.transform_keys! { |k| query_parameter_converter.serialise(k) }
-        parent.get(path:, params:, headers:)
+        converted_params = params.transform_keys { |k| query_parameter_converter.serialise(k) }
+        parent.get(path:, params: converted_params, headers:)
       end
 
       def post(path:, body: nil, headers: {})

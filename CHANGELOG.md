@@ -23,7 +23,7 @@
 
 ### Deprecated
 
-- **`attribute_convention`** is deprecated in favour of `conversions.json_attributes`. The old setting continues to work and is respected as a fallback, but emits a deprecation warning when used at the Resource level. Module-level `attribute_convention` is silently supported for backwards compatibility.
+- **`attribute_convention`** is deprecated in favour of `conversions.json_attributes`. The old setting continues to work — it is propagated to `conversions.json_attributes` at the module level and respected as a fallback at the resource level — but emits a deprecation warning in both cases.
 
 ### Removed
 

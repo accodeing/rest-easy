@@ -12,9 +12,9 @@ Gem::Specification.new do |spec|
   spec.version       = RestEasy::VERSION.dup
 
   spec.summary       = "Boilerplate for REST API libraries, using on dry-rb"
-  spec.description   = spec.summary
+  spec.description   = "Define your resources with a clean DSL, and RestEasy handles naming conventions, type coercion, serialisation, authentication, and HTTP plumbing — so you can ship an API gem with minimal boilerplate."
   spec.homepage      = "https://github.com/accodeing/rest-easy"
-  spec.files         = Dir["CHANGELOG.md", "LICENSE", "README.md", "dry-validation.gemspec", "lib/**/*", "config/*.yml"]
+  spec.files         = Dir["CHANGELOG.md", "LICENSE", "README.md", "lib/**/*"]
   spec.bindir        = "bin"
   spec.executables   = []
   spec.require_paths = ["lib"]
@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "dry-configurable", "~> 0.14"
   spec.add_dependency "faraday", "~> 2.0"
 
-  spec.add_development_dependency "bundler"
-  spec.add_development_dependency "rake"
-  spec.add_development_dependency "rspec"
+  spec.add_development_dependency "bundler", "~> 2.0"
+  spec.add_development_dependency "rake", "~> 13.0"
+  spec.add_development_dependency "rspec", "~> 3.0"
 end

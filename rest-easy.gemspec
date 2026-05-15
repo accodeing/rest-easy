@@ -6,7 +6,7 @@ require "rest_easy/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "rest-easy"
-  spec.authors       = ["Jonas Schubert Erlandsson","Claude Code"]
+  spec.authors       = ["Jonas Schubert Erlandsson","Hannes Elvemyr", "Claude Code"]
   spec.email         = ["jonas@accodeing.com"]
   spec.license       = "MIT"
   spec.version       = RestEasy::VERSION.dup

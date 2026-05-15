@@ -130,6 +130,8 @@ module RestEasy
       # -- settings -------------------------------------------------------
 
       def settings(&block)
+        return super() unless block
+
         class_eval(&block)
       end
 

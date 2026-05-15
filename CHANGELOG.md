@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-15
+
 ### Fixed
 
 - **`conversions.query_parameters` default changed from `:PascalCase` to `nil`.** In 1.1.0 the new automatic query parameter transformation combined with a `:PascalCase` default silently rewrote keys for every consumer, regardless of intent — `Resource.get(params: { city: "X" })` produced `?City=X` instead of `?city=X`. With the new default, `Resource.get` does not transform parameter keys unless `conversions.query_parameters` is explicitly configured, restoring 1.0.0 behaviour. The `json_attributes` default remains `:PascalCase`, since that preserves 1.0.0's `attribute_convention` default.
@@ -41,5 +43,6 @@
 Initial release.
 
 [Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/accodeing/rest-easy/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/accodeing/rest-easy/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/accodeing/rest-easy/releases/tag/v1.0.0

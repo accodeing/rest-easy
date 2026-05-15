@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-05-15
+
 ### Added
 
 - **`conversions` configuration** with independent `query_parameters` and `json_attributes` sub-keys. This allows APIs that use different naming conventions for query parameters vs JSON body attributes to be configured correctly:
@@ -30,6 +32,10 @@
 - **`dry-inflector` runtime dependency.** The gem never used `Dry::Inflector` — Zeitwerk's own inflector is the only one used.
 - **Default value for `attribute_convention`.** Previously defaulted to `:PascalCase`. The setting is now unset by default; reading `MyAPI::Settings.config.attribute_convention` directly returns `nil` unless explicitly configured. The effective default for naming conversion now lives on `conversions.json_attributes` (also `:PascalCase`).
 
-## [1.0.0]
+## [1.0.0] - 2026-03-19
 
 Initial release.
+
+[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/accodeing/rest-easy/compare/v1.0.0...v1.1.0
+[1.0.0]: https://github.com/accodeing/rest-easy/releases/tag/v1.0.0

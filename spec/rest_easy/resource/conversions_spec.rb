@@ -298,6 +298,46 @@ RSpec.describe "Resource conversions" do
       end
     end
 
+    describe "module-level attribute_convention propagation" do
+      it "warns only once across repeated configure calls" do
+        module BCRepeatApi
+          extend RestEasy
+        end
+
+        original_stderr = $stderr
+        $stderr = StringIO.new
+        output = nil
+        begin
+          BCRepeatApi.configure { |c| c.attribute_convention = :PascalCase }
+          BCRepeatApi.configure { |c| c.base_url = "https://api.example.com" }
+        ensure
+          output = $stderr.string
+          $stderr = original_stderr
+          Object.send(:remove_const, :BCRepeatApi)
+        end
+
+        expect(output.scan(/attribute_convention is deprecated/).length).to eq(1)
+      end
+
+      it "does not overwrite a conversions.json_attributes set after attribute_convention" do
+        module BCOverrideApi
+          extend RestEasy
+        end
+
+        original_stderr = $stderr
+        $stderr = StringIO.new
+        begin
+          BCOverrideApi.configure { |c| c.attribute_convention = :PascalCase }
+          BCOverrideApi.configure { conversions.json_attributes = :camelCase }
+        ensure
+          $stderr = original_stderr
+        end
+
+        expect(BCOverrideApi::Settings.config.conversions.json_attributes).to eq(:camelCase)
+        Object.send(:remove_const, :BCOverrideApi)
+      end
+    end
+
     describe "resource-level attribute_convention" do
       it "sets json_attributes and emits a deprecation warning" do
         resource_class = Class.new(RestEasy::Resource)

@@ -154,7 +154,7 @@ module RestEasy
         Conventions.resolve(
           config.conversions.json_attributes ||
           parent&.config&.conversions&.json_attributes ||
-          :PascalCase
+          Conventions::DEFAULT
         )
       end
 
@@ -162,7 +162,7 @@ module RestEasy
         Conventions.resolve(
           config.conversions.query_parameters ||
           parent&.config&.conversions&.query_parameters ||
-          :PascalCase
+          Conventions::DEFAULT
         )
       end
 
@@ -677,7 +677,7 @@ module RestEasy
         if attr_def.source_fields.any?
           # Source fields declared via block params: extract individual
           # values from api_data using convention, splat into parse block.
-          convention = klass.attribute_convention
+          convention = klass.json_attribute_converter
           raw_values = attr_def.source_fields.map do |field_name|
             api_key = convention.serialise(field_name)
             api_data[api_key]
@@ -700,7 +700,7 @@ module RestEasy
 
       if config.debug
         # Warn about API fields that are neither declared attrs nor explicitly ignored
-        convention = klass.attribute_convention
+        convention = klass.json_attribute_converter
         known_api_keys = klass.all_attribute_definitions.values.flat_map do |ad|
           keys = [ad.api_name]
           ad.source_fields.each { |sf| keys << convention.serialise(sf) }

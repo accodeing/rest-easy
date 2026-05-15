@@ -36,7 +36,6 @@ module Acme
   configure do
     base_url "https://api.acme.com/v1"
     authentication RestEasy::Auth::PSK.new(api_key: ENV["ACME_API_KEY"])
-    conversions.json_attributes = :PascalCase
   end
 end
 
@@ -87,8 +86,6 @@ module Fortnox
     base_url "https://api.fortnox.se/3"
     max_retries 3
     authentication RestEasy::Auth::PSK.new(api_key: ENV["FORTNOX_KEY"])
-    conversions.json_attributes = :PascalCase
-    conversions.query_parameters = :PascalCase
   end
 end
 ```

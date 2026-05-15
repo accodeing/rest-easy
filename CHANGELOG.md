@@ -28,6 +28,7 @@
 ### Removed
 
 - **`dry-inflector` runtime dependency.** The gem never used `Dry::Inflector` — Zeitwerk's own inflector is the only one used.
+- **Default value for `attribute_convention`.** Previously defaulted to `:PascalCase`. The setting is now unset by default; reading `MyAPI::Settings.config.attribute_convention` directly returns `nil` unless explicitly configured. The effective default for naming conversion now lives on `conversions.json_attributes` (also `:PascalCase`).
 
 ## [1.0.0]
 

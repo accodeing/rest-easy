@@ -151,16 +151,18 @@ module RestEasy
       # -- conversions ---------------------------------------------------
 
       def json_attribute_converter
-        @json_attribute_converter ||= Conventions.resolve(
+        Conventions.resolve(
           config.conversions.json_attributes ||
-          parent&.config&.conversions&.json_attributes
+          parent&.config&.conversions&.json_attributes ||
+          :PascalCase
         )
       end
 
       def query_parameter_converter
-        @query_parameter_converter ||= Conventions.resolve(
+        Conventions.resolve(
           config.conversions.query_parameters ||
-          parent&.config&.conversions&.query_parameters
+          parent&.config&.conversions&.query_parameters ||
+          :PascalCase
         )
       end
 
@@ -170,7 +172,6 @@ module RestEasy
         if value
           warn "RestEasy: attribute_convention is deprecated, use `configure { conversions.json_attributes = #{value.inspect} }` instead"
           config.conversions.json_attributes = value
-          @json_attribute_converter = nil # bust memoization
         end
         json_attribute_converter
       end

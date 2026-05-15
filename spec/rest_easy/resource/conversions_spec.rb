@@ -386,5 +386,46 @@ RSpec.describe "Resource conversions" do
     it "defaults query_parameters to PascalCase" do
       expect(DefaultApi::Thing.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
+
+    it "falls back to PascalCase for a resource with no parent module" do
+      orphan = Class.new(RestEasy::Resource)
+
+      expect(orphan.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
+      expect(orphan.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+    end
+  end
+
+  # ── Dynamic reconfiguration ─────────────────────────────────────────
+
+  describe "dynamic reconfiguration" do
+    it "picks up json_attributes changes made after the converter is first read" do
+      module ReconfigJsonApi
+        extend RestEasy
+      end
+      class ReconfigJsonApi::Foo < RestEasy::Resource; end
+
+      expect(ReconfigJsonApi::Foo.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
+
+      ReconfigJsonApi.configure { conversions.json_attributes = :camelCase }
+
+      expect(ReconfigJsonApi::Foo.json_attribute_converter).to be_a(RestEasy::Conventions::CamelCase)
+    ensure
+      Object.send(:remove_const, :ReconfigJsonApi) if defined?(ReconfigJsonApi)
+    end
+
+    it "picks up query_parameters changes made after the converter is first read" do
+      module ReconfigQueryApi
+        extend RestEasy
+      end
+      class ReconfigQueryApi::Foo < RestEasy::Resource; end
+
+      expect(ReconfigQueryApi::Foo.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+
+      ReconfigQueryApi.configure { conversions.query_parameters = :snake_case }
+
+      expect(ReconfigQueryApi::Foo.query_parameter_converter).to be_a(RestEasy::Conventions::SnakeCase)
+    ensure
+      Object.send(:remove_const, :ReconfigQueryApi) if defined?(ReconfigQueryApi)
+    end
   end
 end

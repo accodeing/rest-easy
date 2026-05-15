@@ -25,8 +25,6 @@ RSpec.describe RestEasy::Resource do
     describe "path" do
       it "sets the endpoint path via configure" do
         resource = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           configure do
             path "invoices"
           end
@@ -43,8 +41,6 @@ RSpec.describe RestEasy::Resource do
   describe "metadata" do
     it "sets default meta values on parsed instances" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         metadata partial: true
       end
@@ -55,8 +51,6 @@ RSpec.describe RestEasy::Resource do
 
     it "sets default meta values on stubbed instances" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         metadata partial: true
       end
@@ -67,8 +61,6 @@ RSpec.describe RestEasy::Resource do
 
     it "preserves defaults through update" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         metadata partial: true
       end
@@ -80,8 +72,6 @@ RSpec.describe RestEasy::Resource do
 
     it "allows instance-level override of defaults" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         metadata partial: true
       end
@@ -93,8 +83,6 @@ RSpec.describe RestEasy::Resource do
 
     it "inherits metadata from parent resource" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         metadata partial: true
       end
 
@@ -110,8 +98,6 @@ RSpec.describe RestEasy::Resource do
 
     it "returns empty hash when no metadata defined" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
       end
 
@@ -125,8 +111,6 @@ RSpec.describe RestEasy::Resource do
     describe "simple declaration" do
       before do
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
           attr :age, Integer
           attr :active, Boolean
@@ -321,8 +305,6 @@ RSpec.describe RestEasy::Resource do
     describe "explicit API name mapping with <=>" do
       before do
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           using RestEasy::Refinements
 
           attr :tax_reduction_list_url <=> '@urlTaxReductionList', String, :read_only, :optional
@@ -340,8 +322,6 @@ RSpec.describe RestEasy::Resource do
     describe "attribute flags" do
       it "supports :required flag" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String, :required
         end
 
@@ -352,8 +332,6 @@ RSpec.describe RestEasy::Resource do
 
       it "supports :optional flag" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String, :optional
         end
 
@@ -363,8 +341,6 @@ RSpec.describe RestEasy::Resource do
 
       it "supports :read_only flag" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :balance, Float, :read_only
         end
 
@@ -379,8 +355,6 @@ RSpec.describe RestEasy::Resource do
     describe "custom parse/serialise with block" do
       before do
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           using RestEasy::Refinements
 
           attr :clean_field <=> :raw_field, String do
@@ -421,8 +395,6 @@ RSpec.describe RestEasy::Resource do
         end
 
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           using RestEasy::Refinements
 
           attr :clean_field <=> :raw_field, String, mapper
@@ -455,8 +427,6 @@ RSpec.describe RestEasy::Resource do
         end
 
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :first_name, String
           attr :last_name, String
           attr :full_name, String, mapper
@@ -503,8 +473,6 @@ RSpec.describe RestEasy::Resource do
         end
 
         @resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :street, String
           attr :city, String
           attr :address, String, mapper
@@ -530,8 +498,6 @@ RSpec.describe RestEasy::Resource do
   describe "key" do
     it "declares the unique identifier attribute" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :document_number, Integer, :read_only
       end
 
@@ -542,8 +508,6 @@ RSpec.describe RestEasy::Resource do
 
     it "is equivalent to attr with :key flag" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :id, Integer, :key
       end
 
@@ -555,8 +519,6 @@ RSpec.describe RestEasy::Resource do
     it "warns when called more than once" do
       expect {
         Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           key :id, Integer
           key :other_id, Integer
         end
@@ -569,8 +531,6 @@ RSpec.describe RestEasy::Resource do
   describe "ignore" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         ignore :internal_field
       end
@@ -606,8 +566,6 @@ RSpec.describe RestEasy::Resource do
 
     it "does not warn about explicitly ignored fields" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String
         ignore :internal_field
       end
@@ -638,8 +596,6 @@ RSpec.describe RestEasy::Resource do
   describe "synthetic attributes via attr block" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :first_name, String
         attr :last_name, String
 
@@ -704,8 +660,6 @@ RSpec.describe RestEasy::Resource do
   describe "bare block as implicit parse" do
     it "treats a block with params as an implicit parse block" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :full_name, String, :read_only do |first_name, last_name|
           "#{first_name} #{last_name}"
         end
@@ -721,8 +675,6 @@ RSpec.describe RestEasy::Resource do
 
     it "extracts source_fields from bare block param names" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :full_name, String, :read_only do |first_name, last_name|
           "#{first_name} #{last_name}"
         end
@@ -735,8 +687,6 @@ RSpec.describe RestEasy::Resource do
 
     it "works with single-param bare block for split pattern" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :city, String do |address|
           address["city"]
         end
@@ -751,8 +701,6 @@ RSpec.describe RestEasy::Resource do
 
     it "serialises under own API name when no serialise block is defined" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :city, String do |address|
           address["city"]
         end
@@ -773,8 +721,6 @@ RSpec.describe RestEasy::Resource do
   describe "multi-param serialise block" do
     it "gathers model values by param names and splats into block" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :street, String
         attr :city, String
 
@@ -792,8 +738,6 @@ RSpec.describe RestEasy::Resource do
 
     it "stores target_fields from serialise block param names" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :street, String
         attr :city, String
 
@@ -813,8 +757,6 @@ RSpec.describe RestEasy::Resource do
     describe "before_parse" do
       it "pre-processes API data before attribute parsing" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           before_parse do |api_data|
             api_data["Invoice"]
           end
@@ -832,8 +774,6 @@ RSpec.describe RestEasy::Resource do
         after_parse_called = false
 
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
 
           after_parse do |model|
@@ -851,8 +791,6 @@ RSpec.describe RestEasy::Resource do
         before_serialise_called = false
 
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
 
           before_serialise do |model|
@@ -869,8 +807,6 @@ RSpec.describe RestEasy::Resource do
     describe "after_serialise" do
       it "post-processes API data after serialisation" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
 
           after_serialise do |api_data|
@@ -888,8 +824,6 @@ RSpec.describe RestEasy::Resource do
     describe "before_parse with collections" do
       it "unwraps envelope before parsing a collection" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           before_parse do |api_data|
             api_data["Invoices"]
           end
@@ -912,8 +846,6 @@ RSpec.describe RestEasy::Resource do
     describe "hook inheritance" do
       it "inherits hooks from parent classes" do
         parent = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           before_parse do |api_data|
             api_data["Wrapper"]
           end
@@ -929,8 +861,6 @@ RSpec.describe RestEasy::Resource do
 
       it "resolves config from the calling class in inherited before_parse hook" do
         parent = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           settings do
             setting :instance_wrapper
           end
@@ -959,8 +889,6 @@ RSpec.describe RestEasy::Resource do
   describe "instance state" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :id, Integer
         attr :name, String
         ignore :internal
@@ -1021,8 +949,6 @@ RSpec.describe RestEasy::Resource do
   describe "change tracking" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :id, Integer
         attr :name, String
         attr :amount, Float
@@ -1059,8 +985,6 @@ RSpec.describe RestEasy::Resource do
   describe "serialisation" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :id, Integer, :read_only
         attr :name, String
         attr :balance, Float, :read_only
@@ -1108,8 +1032,6 @@ RSpec.describe RestEasy::Resource do
   describe "equality" do
     before do
       @resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :id, Integer
         attr :name, String
       end
@@ -1131,8 +1053,6 @@ RSpec.describe RestEasy::Resource do
 
     it "considers instances of different classes unequal" do
       other_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         key :id, Integer
         attr :name, String
       end
@@ -1149,8 +1069,6 @@ RSpec.describe RestEasy::Resource do
   describe "type coercion" do
     it "coerces string to integer" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :count, Integer
       end
 
@@ -1160,8 +1078,6 @@ RSpec.describe RestEasy::Resource do
 
     it "coerces string to float" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :amount, Float
       end
 
@@ -1171,8 +1087,6 @@ RSpec.describe RestEasy::Resource do
 
     it "supports type constraints" do
       resource_class = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         attr :name, String.constrained(max_size: 5)
       end
 
@@ -1184,8 +1098,6 @@ RSpec.describe RestEasy::Resource do
     context "via update" do
       it "coerces values through the attribute type" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :count, Integer
         end
 
@@ -1196,8 +1108,6 @@ RSpec.describe RestEasy::Resource do
 
       it "rejects values that violate constraints" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String.constrained(max_size: 5)
         end
 
@@ -1209,8 +1119,6 @@ RSpec.describe RestEasy::Resource do
 
       it "passes nil through without coercion" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
         end
 
@@ -1223,8 +1131,6 @@ RSpec.describe RestEasy::Resource do
     context "via stub" do
       it "coerces values through the attribute type" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :count, Integer
         end
 
@@ -1234,8 +1140,6 @@ RSpec.describe RestEasy::Resource do
 
       it "rejects values that violate constraints" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String.constrained(max_size: 5)
         end
 
@@ -1246,8 +1150,6 @@ RSpec.describe RestEasy::Resource do
 
       it "passes nil through without coercion" do
         resource_class = Class.new(described_class) do
-          configure { conversions.json_attributes = :PascalCase }
-
           attr :name, String
         end
 
@@ -1262,8 +1164,6 @@ RSpec.describe RestEasy::Resource do
   describe "settings" do
     it "declares a setting via the settings block" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1274,8 +1174,6 @@ RSpec.describe RestEasy::Resource do
 
     it "allows reading settings via config" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :collection_name, default: "items"
         end
@@ -1287,8 +1185,6 @@ RSpec.describe RestEasy::Resource do
 
     it "supports reader: true for accessor methods" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true, reader: true
         end
@@ -1299,8 +1195,6 @@ RSpec.describe RestEasy::Resource do
 
     it "inherits settings from parent resource" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1315,8 +1209,6 @@ RSpec.describe RestEasy::Resource do
 
     it "isolates config between sibling classes" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1334,8 +1226,6 @@ RSpec.describe RestEasy::Resource do
 
     it "allows child to override inherited defaults without affecting parent" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1350,8 +1240,6 @@ RSpec.describe RestEasy::Resource do
 
     it "accumulates settings from multiple levels" do
       grandparent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1373,8 +1261,6 @@ RSpec.describe RestEasy::Resource do
 
     it "exposes config on instances for use in hooks" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: true
         end
@@ -1387,8 +1273,6 @@ RSpec.describe RestEasy::Resource do
 
     it "exposes configure-set values on instances" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         configure do
           path "/invoices"
         end
@@ -1401,8 +1285,6 @@ RSpec.describe RestEasy::Resource do
 
     it "exposes inherited configure-set values on instances" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :wrapper, default: false
         end
@@ -1426,8 +1308,6 @@ RSpec.describe RestEasy::Resource do
   describe "configure" do
     it "sets a config value via method-call syntax" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :adapter, default: :rest
         end
@@ -1442,8 +1322,6 @@ RSpec.describe RestEasy::Resource do
 
     it "sets multiple values in one block" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :adapter, default: :rest
           setting :pool, default: 1
@@ -1461,8 +1339,6 @@ RSpec.describe RestEasy::Resource do
 
     it "works with nested settings" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :database do
             setting :dsn, default: "sqlite:memory"
@@ -1479,8 +1355,6 @@ RSpec.describe RestEasy::Resource do
 
     it "inherits settings and allows child to configure them" do
       parent = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :adapter, default: :rest
         end
@@ -1498,8 +1372,6 @@ RSpec.describe RestEasy::Resource do
 
     it "can be called after class definition" do
       resource = Class.new(described_class) do
-        configure { conversions.json_attributes = :PascalCase }
-
         settings do
           setting :pool, default: 1
         end

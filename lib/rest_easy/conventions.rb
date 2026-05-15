@@ -56,6 +56,8 @@ module RestEasy
       snake_case: SnakeCase.new
     }.freeze
 
+    DEFAULT = :PascalCase
+
     def self.resolve(convention)
       case convention
       when Symbol

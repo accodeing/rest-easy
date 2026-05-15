@@ -83,11 +83,14 @@ module RestEasy
           yield self::Settings.config
         end
 
-        # BC: propagate deprecated attribute_convention to conversions
+        # BC: propagate deprecated attribute_convention to conversions, but
+        # only on changes — so repeated `configure` calls don't re-warn and
+        # don't clobber a `conversions.json_attributes` set in a later call.
         ac = self::Settings.config.attribute_convention
-        if ac
+        if ac && @_propagated_attribute_convention != ac
           warn "RestEasy: attribute_convention is deprecated, use `conversions.json_attributes = #{ac.inspect}` instead"
           self::Settings.config.conversions.json_attributes = ac
+          @_propagated_attribute_convention = ac
         end
       end
     end

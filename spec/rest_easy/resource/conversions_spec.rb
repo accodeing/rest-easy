@@ -288,8 +288,8 @@ RSpec.describe "Resource conversions" do
         expect(BCModuleApi::Invoice.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
       end
 
-      it "defaults query_parameters to snake_case" do
-        expect(BCModuleApi::Invoice.query_parameter_converter).to be_a(RestEasy::Conventions::SnakeCase)
+      it "defaults query_parameters to PascalCase" do
+        expect(BCModuleApi::Invoice.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
       end
 
       it "parses with the propagated convention" do
@@ -379,12 +379,12 @@ RSpec.describe "Resource conversions" do
       Object.send(:remove_const, :DefaultApi)
     end
 
-    it "defaults json_attributes to snake_case" do
-      expect(DefaultApi::Thing.json_attribute_converter).to be_a(RestEasy::Conventions::SnakeCase)
+    it "defaults json_attributes to PascalCase (matches 1.0.0 attribute_convention default)" do
+      expect(DefaultApi::Thing.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
-    it "defaults query_parameters to snake_case" do
-      expect(DefaultApi::Thing.query_parameter_converter).to be_a(RestEasy::Conventions::SnakeCase)
+    it "defaults query_parameters to PascalCase" do
+      expect(DefaultApi::Thing.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
   end
 end

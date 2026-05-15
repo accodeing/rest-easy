@@ -100,8 +100,8 @@ end
 | `base_url`                       | `"https://example.com"`    | Base URL for all requests                         |
 | `max_retries`                    | `3`                        | Retry count on request failure                    |
 | `authentication`                 | `Auth::Null.new`           | Authentication strategy                           |
-| `conversions.json_attributes`    | `:snake_case`              | Naming convention for JSON response/request fields|
-| `conversions.query_parameters`   | `:snake_case`              | Naming convention for query parameter keys        |
+| `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields|
+| `conversions.query_parameters`   | `:PascalCase`              | Naming convention for query parameter keys        |
 
 ### Faraday middleware
 
@@ -193,7 +193,7 @@ The full `Dry::Types` vocabulary is available inside resource bodies — `Strict
 
 ### Naming conventions
 
-RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention. The `conversions` config controls this independently for JSON attributes and query parameters:
+RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention. The `conversions` config controls this independently for JSON attributes and query parameters. Both default to `:PascalCase`:
 
 | Convention    | Ruby attr          | API field            |
 |---------------|--------------------|----------------------|

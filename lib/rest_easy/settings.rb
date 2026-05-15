@@ -12,8 +12,8 @@ module RestEasy
     setting :attribute_convention # deprecated — propagated to conversions.json_attributes in configure
 
     setting :conversions do
-      setting :query_parameters, default: :snake_case, reader: true
-      setting :json_attributes, default: :snake_case, reader: true
+      setting :query_parameters, default: :PascalCase, reader: true
+      setting :json_attributes, default: :PascalCase, reader: true
     end
   end
 end

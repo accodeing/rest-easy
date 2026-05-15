@@ -288,8 +288,8 @@ RSpec.describe "Resource conversions" do
         expect(BCModuleApi::Invoice.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
       end
 
-      it "defaults query_parameters to PascalCase" do
-        expect(BCModuleApi::Invoice.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+      it "does not infer a query_parameters convention from attribute_convention" do
+        expect(BCModuleApi::Invoice.query_parameter_converter).to be_nil
       end
 
       it "parses with the propagated convention" do
@@ -383,15 +383,52 @@ RSpec.describe "Resource conversions" do
       expect(DefaultApi::Thing.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
     end
 
-    it "defaults query_parameters to PascalCase" do
-      expect(DefaultApi::Thing.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+    it "defaults query_parameters to nil (no transformation)" do
+      expect(DefaultApi::Thing.query_parameter_converter).to be_nil
     end
 
-    it "falls back to PascalCase for a resource with no parent module" do
+    it "falls back to PascalCase json_attributes / nil query_parameters for a resource with no parent module" do
       orphan = Class.new(RestEasy::Resource)
 
       expect(orphan.json_attribute_converter).to be_a(RestEasy::Conventions::PascalCase)
-      expect(orphan.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+      expect(orphan.query_parameter_converter).to be_nil
+    end
+  end
+
+  # ── No-op when query_parameters is unconfigured ─────────────────────
+
+  describe "Resource.get with no query_parameters convention" do
+    before(:all) do
+      module NoConvApi
+        extend RestEasy
+        # Intentionally no conversions.query_parameters set
+      end
+
+      class NoConvApi::Thing < RestEasy::Resource
+        configure { path "things" }
+      end
+    end
+
+    after(:all) do
+      Object.send(:remove_const, :NoConvApi)
+    end
+
+    it "passes params through untransformed when no convention is configured" do
+      captured_params = nil
+
+      setup_test_connection(NoConvApi) do |stub|
+        stub.get("/things") do |env|
+          captured_params = env.params
+          [200, { "Content-Type" => "application/json" }, "[]"]
+        end
+      end
+
+      NoConvApi::Thing.get(
+        path: "things",
+        params: { city: "Stockholm", zip_code: "12345", customerName: "Acme" }
+      )
+
+      expect(captured_params).to eq("city" => "Stockholm", "zip_code" => "12345", "customerName" => "Acme")
     end
   end
 
@@ -419,7 +456,7 @@ RSpec.describe "Resource conversions" do
       end
       class ReconfigQueryApi::Foo < RestEasy::Resource; end
 
-      expect(ReconfigQueryApi::Foo.query_parameter_converter).to be_a(RestEasy::Conventions::PascalCase)
+      expect(ReconfigQueryApi::Foo.query_parameter_converter).to be_nil
 
       ReconfigQueryApi.configure { conversions.query_parameters = :snake_case }
 

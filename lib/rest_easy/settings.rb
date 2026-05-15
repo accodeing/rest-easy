@@ -12,7 +12,7 @@ module RestEasy
     setting :attribute_convention # deprecated — propagated to conversions.json_attributes in configure
 
     setting :conversions do
-      setting :query_parameters, default: Conventions::DEFAULT, reader: true
+      setting :query_parameters, default: nil, reader: true
       setting :json_attributes, default: Conventions::DEFAULT, reader: true
     end
   end

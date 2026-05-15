@@ -98,7 +98,7 @@ end
 | `max_retries`                    | `3`                        | Retry count on request failure                    |
 | `authentication`                 | `Auth::Null.new`           | Authentication strategy                           |
 | `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields|
-| `conversions.query_parameters`   | `:PascalCase`              | Naming convention for query parameter keys        |
+| `conversions.query_parameters`   | `nil` (no transformation)  | Naming convention for query parameter keys        |
 
 ### Faraday middleware
 
@@ -190,7 +190,7 @@ The full `Dry::Types` vocabulary is available inside resource bodies — `Strict
 
 ### Naming conventions
 
-RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention. The `conversions` config controls this independently for JSON attributes and query parameters. Both default to `:PascalCase`:
+RestEasy automatically maps between Ruby's `snake_case` attribute names and the API's naming convention. The `conversions` config controls this independently for JSON attributes and query parameters. `json_attributes` defaults to `:PascalCase`; `query_parameters` defaults to `nil`, meaning keys are passed through untransformed unless you explicitly configure a convention.
 
 | Convention    | Ruby attr          | API field            |
 |---------------|--------------------|----------------------|
@@ -217,7 +217,7 @@ class MyAPI::Special < MyAPI::Resource
 end
 ```
 
-Query parameter keys are automatically transformed when calling `get` with `params:`. For example, with `query_parameters: :PascalCase`, `params: { sort_order: "asc" }` becomes `?SortOrder=asc` in the request.
+Query parameter keys are transformed when calling `get` with `params:` only if `conversions.query_parameters` is configured. For example, with `query_parameters: :PascalCase`, `params: { sort_order: "asc" }` becomes `?SortOrder=asc` in the request. With the default `nil`, keys pass through unchanged.
 
 You can also provide a custom convention object with `parse(api_name)` and `serialise(model_name)` methods.
 

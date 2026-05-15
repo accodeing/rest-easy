@@ -159,11 +159,9 @@ module RestEasy
       end
 
       def query_parameter_converter
-        Conventions.resolve(
-          config.conversions.query_parameters ||
-          parent&.config&.conversions&.query_parameters ||
-          Conventions::DEFAULT
-        )
+        convention = config.conversions.query_parameters ||
+                     parent&.config&.conversions&.query_parameters
+        convention && Conventions.resolve(convention)
       end
 
       # -- attribute_convention (deprecated) -------------------------------
@@ -480,7 +478,8 @@ module RestEasy
       # HTTP primitives — delegate to the parent API module's connection
 
       def get(path:, params: {}, headers: {})
-        converted_params = params.transform_keys { |k| query_parameter_converter.serialise(k) }
+        converter = query_parameter_converter
+        converted_params = converter ? params.transform_keys { |k| converter.serialise(k) } : params
         parent.get(path:, params: converted_params, headers:)
       end
 

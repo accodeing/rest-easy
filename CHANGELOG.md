@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`logger` setting.** When set to a `Logger`-compatible instance, Faraday's built-in logger middleware is attached to the connection and logs HTTP request/response lines and headers. Unset by default — no overhead when not in use. The standard auth-bearing headers (`Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`) are always filtered to `[FILTERED]`; consumer gems are responsible for redacting domain-specific secrets in non-standard headers or response bodies (see README "Redacting domain-specific secrets").
+- **`log_bodies` setting** (default `false`). Opt-in toggle for logging request/response bodies. Off by default because bodies often carry domain-specific secrets that RestEasy cannot recognize.
+
 ## [1.1.2] - 2026-05-15
 
 ### Changed

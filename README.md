@@ -92,17 +92,100 @@ end
 
 ### Available settings
 
-| Setting                          | Default                    | Description                                       |
-|----------------------------------|----------------------------|---------------------------------------------------|
-| `base_url`                       | `"https://example.com"`    | Base URL for all requests                         |
-| `max_retries`                    | `3`                        | Retry count on request failure                    |
-| `authentication`                 | `Auth::Null.new`           | Authentication strategy                           |
-| `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields|
-| `conversions.query_parameters`   | `nil` (no transformation)  | Naming convention for query parameter keys        |
+| Setting                          | Default                    | Description                                                                                |
+|----------------------------------|----------------------------|--------------------------------------------------------------------------------------------|
+| `authentication`                 | `Auth::Null.new`           | Authentication strategy                                                                    |
+| `base_url`                       | `"https://example.com"`    | Base URL for all requests                                                                  |
+| `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields                                         |
+| `conversions.query_parameters`   | `nil` (no transformation)  | Naming convention for query parameter keys                                                 |
+| `log_bodies`                     | `false`                    | When `true`, request/response bodies are logged. Off by default to avoid leaking domain secrets |
+| `logger`                         | `nil`                      | When set, attaches Faraday's logger middleware and writes HTTP request/response details to it |
+| `max_retries`                    | `3`                        | Retry count on request failure                                                             |
+
+### Logging HTTP traffic
+
+Set `logger` to any `Logger`-compatible instance to log HTTP request and response details. The middleware is Faraday's built-in `Faraday::Response::Logger` and is only attached when the setting is non-nil — no overhead when unset.
+
+```ruby
+module Acme
+  extend RestEasy
+
+  configure do |config|
+    config.logger = Logger.new($stdout)
+  end
+end
+```
+
+By default, RestEasy logs request/response **lines and headers only**, with the following standard headers always filtered to `[FILTERED]`:
+
+- `Authorization`
+- `Proxy-Authorization`
+- `Cookie`
+- `Set-Cookie`
+
+Request and response **bodies are not logged by default**, because bodies frequently carry API-specific secrets (OAuth token responses, signed payloads, PII) that RestEasy has no way to recognize.
+
+> **Note:** The Faraday connection is built lazily on the first request and cached for the lifetime of the process. Changes to `logger` or `log_bodies` after the first request take effect only after restart.
+
+#### Logging request/response bodies
+
+If your API's bodies are safe to log — or you've added domain-specific scrubbing (see below) — opt in:
+
+```ruby
+module Acme
+  extend RestEasy
+
+  configure do |config|
+    config.logger     = Logger.new($stdout)
+    config.log_bodies = true
+  end
+end
+```
+
+#### Redacting domain-specific secrets
+
+RestEasy only knows about HTTP-standard auth headers. If your API returns secrets in response bodies (e.g. an access-token endpoint), or uses non-standard headers like `X-Acme-Api-Key`, your consumer gem is responsible for scrubbing them. The simplest pattern is to wrap the `Logger` instance before handing it to RestEasy — sketched here as a `SimpleDelegator`:
+
+```ruby
+# Sketch — wrap the Logger in your gem so it scrubs your
+# domain secrets out of each line before it's written.
+
+class RedactingLogger < SimpleDelegator
+  # ...your scrubbing logic, applied to each log message...
+end
+
+module Acme
+  extend RestEasy
+
+  configure do |config|
+    config.logger     = RedactingLogger.new(Logger.new($stdout))
+    config.log_bodies = true
+  end
+end
+```
+
+#### Exposing a debug switch in your consumer gem
+
+RestEasy does not read any environment variable itself — that decision belongs to the gem that wraps it. If you want consumers of your gem to flip logging on without editing code, expose your own env var and wire it to `config.logger`:
+
+```ruby
+module Acme
+  extend RestEasy
+
+  configure do |config|
+    if ENV["ACME_DEBUG"]
+      config.logger     = RedactingLogger.new(Logger.new($stdout))
+      config.log_bodies = true
+    end
+  end
+end
+```
+
+Now `ACME_DEBUG=1 bundle exec ...` turns on wire logging — with Acme-aware scrubbing — without any code changes in the consuming application.
 
 ### Faraday middleware
 
-Configure the underlying Faraday connection with a `connection` block:
+For middleware beyond the built-in logger, configure the underlying Faraday connection with a `connection` block:
 
 ```ruby
 module Acme

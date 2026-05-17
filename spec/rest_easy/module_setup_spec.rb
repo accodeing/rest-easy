@@ -112,6 +112,134 @@ RSpec.describe "Module setup with extend RestEasy" do
       SetupTestApi.faraday_connection # triggers lazy creation
       expect(block_called).to be true
     end
+
+    it "does not attach the logger middleware when logger is unset" do
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+        end
+      end
+
+      handlers = SetupTestApi.faraday_connection.builder.handlers
+      expect(handlers).not_to include(Faraday::Response::Logger)
+    end
+
+    it "attaches the Faraday logger middleware when logger is set" do
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+          config.logger = Logger.new(IO::NULL)
+        end
+      end
+
+      handlers = SetupTestApi.faraday_connection.builder.handlers
+      expect(handlers).to include(Faraday::Response::Logger)
+    end
+
+    describe "header redaction" do
+      %w[Authorization Proxy-Authorization Cookie].each do |header_name|
+        it "redacts the #{header_name} request header by default" do
+          io = StringIO.new
+
+          module SetupTestApi
+            extend RestEasy
+
+            configure do |config|
+              config.base_url = "https://api.example.com"
+            end
+          end
+          SetupTestApi.configure { |c| c.logger = Logger.new(io) }
+          SetupTestApi.connection do |f|
+            f.adapter :test do |stub|
+              stub.get("/x") { [200, {}, "ok"] }
+            end
+          end
+
+          SetupTestApi.get(path: "/x", headers: { header_name => "super-secret-value" })
+
+          expect(io.string).to include("[FILTERED]")
+          expect(io.string).not_to include("super-secret-value")
+        end
+      end
+
+      it "redacts the Set-Cookie response header by default" do
+        io = StringIO.new
+
+        module SetupTestApi
+          extend RestEasy
+
+          configure do |config|
+            config.base_url = "https://api.example.com"
+          end
+        end
+        SetupTestApi.configure { |c| c.logger = Logger.new(io) }
+        SetupTestApi.connection do |f|
+          f.adapter :test do |stub|
+            stub.get("/x") { [200, { "Set-Cookie" => "session=super-secret-value" }, "ok"] }
+          end
+        end
+
+        SetupTestApi.get(path: "/x")
+
+        expect(io.string).to include("[FILTERED]")
+        expect(io.string).not_to include("super-secret-value")
+      end
+    end
+
+    it "does not log bodies by default" do
+      io = StringIO.new
+
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+        end
+      end
+      SetupTestApi.configure { |c| c.logger = Logger.new(io) }
+      SetupTestApi.connection do |f|
+        f.adapter :test do |stub|
+          stub.get("/x") { [200, { "Content-Type" => "application/json" }, '{"secret":"abc123"}'] }
+        end
+      end
+
+      SetupTestApi.get(path: "/x")
+
+      # Sanity-check that the middleware actually ran — without this, the
+      # absence of the secret could mean redaction worked OR that nothing
+      # was logged at all.
+      expect(io.string).to include("GET")
+      expect(io.string).not_to include("abc123")
+    end
+
+    it "logs bodies when log_bodies is true" do
+      io = StringIO.new
+
+      module SetupTestApi
+        extend RestEasy
+
+        configure do |config|
+          config.base_url = "https://api.example.com"
+        end
+      end
+      SetupTestApi.configure do |c|
+        c.logger     = Logger.new(io)
+        c.log_bodies = true
+      end
+      SetupTestApi.connection do |f|
+        f.adapter :test do |stub|
+          stub.get("/x") { [200, { "Content-Type" => "application/json" }, '{"value":"visible"}'] }
+        end
+      end
+
+      SetupTestApi.get(path: "/x")
+
+      expect(io.string).to include("visible")
+    end
   end
 
   describe "isolation between modules" do

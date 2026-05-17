@@ -66,6 +66,9 @@ module RestEasy
   # ── Module extension (ClassMethods) ──────────────────────────────────
 
   module ClassMethods
+    STANDARD_AUTH_HEADERS = %w[Authorization Proxy-Authorization Cookie Set-Cookie].freeze
+    private_constant :STANDARD_AUTH_HEADERS
+
     def config
       self::Settings.config
     end
@@ -107,6 +110,16 @@ module RestEasy
       @faraday_connection ||= Faraday.new(url: config.base_url) do |f|
         f.request :json
         f.response :json
+        if config.logger
+          # Faraday's logger emits headers as `Name: "value"` — the filters
+          # depend on that format. If the format changes, redaction silently
+          # breaks; the integration specs catch the common case.
+          f.response :logger, config.logger, bodies: config.log_bodies do |l|
+            STANDARD_AUTH_HEADERS.each do |name|
+              l.filter(/(#{Regexp.escape(name)}:\s*")[^"]+/i, '\1[FILTERED]')
+            end
+          end
+        end
         @connection_block&.call(f)
       end
     end

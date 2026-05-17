@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-05-17
+
 ### Added
 
 - **`logger` setting.** When set to a `Logger`-compatible instance, Faraday's built-in logger middleware is attached to the connection and logs HTTP request/response lines and headers. Unset by default — no overhead when not in use. The standard auth-bearing headers (`Authorization`, `Proxy-Authorization`, `Cookie`, `Set-Cookie`) are always filtered to `[FILTERED]`; consumer gems are responsible for redacting domain-specific secrets in non-standard headers or response bodies (see README "Redacting domain-specific secrets").
@@ -53,7 +55,8 @@
 
 Initial release.
 
-[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/accodeing/rest-easy/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/accodeing/rest-easy/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/accodeing/rest-easy/compare/v1.1.0...v1.1.1
 [1.1.0]: https://github.com/accodeing/rest-easy/compare/v1.0.0...v1.1.0

@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+- `base64` is now an explicit runtime dependency. It stopped being a
+  default gem in Ruby 3.4, so it must be declared for the basic-auth
+  strategy to load.
+
 ### Changed
 
 - **Minimum Ruby version raised to 3.2.** Ruby 3.1 reached end-of-life

@@ -26,6 +26,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency "zeitwerk", "~> 2.6"
   spec.add_dependency "dry-configurable", "~> 1.0"
   spec.add_dependency "faraday", "~> 2.0"
+  spec.add_dependency "base64", "~> 0.2"
 
   spec.add_development_dependency "bundler", "~> 2.0"
   spec.add_development_dependency "rake", "~> 13.0"

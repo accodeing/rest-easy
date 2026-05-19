@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-05-19
+
 ### Added
 
 - `base64` is now an explicit runtime dependency. It stopped being a
@@ -12,8 +14,7 @@
 
 - **Minimum Ruby version raised to 3.2.** Ruby 3.1 reached end-of-life
   in March 2025 and is no longer supported or tested. Consumers on Ruby
-  3.1 are held at the previous release by Bundler. Release this as a
-  minor version bump (`1.3.0`), not a patch.
+  3.1 are held at the previous release by Bundler.
 
 ## [1.2.0] - 2026-05-17
 
@@ -68,7 +69,8 @@
 
 Initial release.
 
-[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.2.0...HEAD
+[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.3.0...HEAD
+[1.3.0]: https://github.com/accodeing/rest-easy/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/accodeing/rest-easy/compare/v1.1.2...v1.2.0
 [1.1.2]: https://github.com/accodeing/rest-easy/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/accodeing/rest-easy/compare/v1.1.0...v1.1.1

@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **Minimum Ruby version raised to 3.2.** Ruby 3.1 reached end-of-life
+  in March 2025 and is no longer supported or tested. Consumers on Ruby
+  3.1 are held at the previous release by Bundler. Release this as a
+  minor version bump (`1.3.0`), not a patch.
+
 ## [1.2.0] - 2026-05-17
 
 ### Added

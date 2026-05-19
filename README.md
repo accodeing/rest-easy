@@ -20,7 +20,7 @@ Or your Gemfile:
 gem "rest-easy", "~> 1.0"
 ```
 
-Requires Ruby >= 3.1.
+Requires Ruby >= 3.2.
 
 ## Quick start
 

@@ -1095,6 +1095,21 @@ RSpec.describe RestEasy::Resource do
       }.to raise_error(RestEasy::ConstraintError)
     end
 
+    it "includes the attribute name and the underlying dry-types reason in the error message" do
+      resource_class = Class.new(described_class) do
+        attr :count, Integer
+      end
+
+      expect {
+        resource_class.parse({ "Count" => "" })
+      }.to raise_error(RestEasy::ConstraintError) do |e|
+        expect(e.attribute_name).to eq(:count)
+        expect(e.message).to include("count")
+        expect(e.message).to include('""')
+        expect(e.message).to match(/invalid value for Integer/)
+      end
+    end
+
     context "via update" do
       it "coerces values through the attribute type" do
         resource_class = Class.new(described_class) do

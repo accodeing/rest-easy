@@ -38,10 +38,12 @@ module RestEasy
 
     def coerce(value)
       @type[value]
-    rescue Dry::Types::ConstraintError => e
-      raise RestEasy::ConstraintError.new(@model_name, value, e.message)
-    rescue Dry::Types::CoercionError => e
-      raise RestEasy::ConstraintError.new(@model_name, value, e.message)
+    rescue Dry::Types::ConstraintError, Dry::Types::CoercionError => e
+      raise RestEasy::ConstraintError.new(
+        @model_name,
+        value,
+        "Attribute '#{@model_name}': #{e.message}"
+      )
     end
 
     def parse_value(*raw_values)

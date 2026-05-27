@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`ConstraintError` messages now include the attribute name.**
+  When attribute coercion fails, the raised `RestEasy::ConstraintError`
+  previously surfaced only the underlying dry-types reason
+  (e.g. `invalid value for Integer(): ""`), leaving the user to guess which
+  attribute on which resource had failed. The message now prefixes the
+  model-side attribute name:
+  `Attribute 'count': invalid value for Integer(): ""`.
+  The exception's `#attribute_name` reader is unchanged.
+
 ## [1.3.0] - 2026-05-19
 
 ### Added

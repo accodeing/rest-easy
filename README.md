@@ -92,15 +92,15 @@ end
 
 ### Available settings
 
-| Setting                          | Default                    | Description                                                                                |
-|----------------------------------|----------------------------|--------------------------------------------------------------------------------------------|
-| `authentication`                 | `Auth::Null.new`           | Authentication strategy                                                                    |
-| `base_url`                       | `"https://example.com"`    | Base URL for all requests                                                                  |
-| `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields                                         |
-| `conversions.query_parameters`   | `nil` (no transformation)  | Naming convention for query parameter keys                                                 |
+| Setting                          | Default                    | Description                                                                                     |
+|----------------------------------|----------------------------|-------------------------------------------------------------------------------------------------|
+| `authentication`                 | `Auth::Null.new`           | Authentication strategy                                                                         |
+| `base_url`                       | `"https://example.com"`    | Base URL for all requests                                                                       |
+| `conversions.json_attributes`    | `:PascalCase`              | Naming convention for JSON response/request fields                                              |
+| `conversions.query_parameters`   | `nil` (no transformation)  | Naming convention for query parameter keys                                                      |
 | `log_bodies`                     | `false`                    | When `true`, request/response bodies are logged. Off by default to avoid leaking domain secrets |
-| `logger`                         | `nil`                      | When set, attaches Faraday's logger middleware and writes HTTP request/response details to it |
-| `max_retries`                    | `3`                        | Retry count on request failure                                                             |
+| `logger`                         | `nil`                      | When set, attaches Faraday's logger middleware and writes HTTP request/response details to it   |
+| `max_retries`                    | `3`                        | Retry count on request failure                                                                  |
 
 ### Logging HTTP traffic
 
@@ -326,12 +326,12 @@ attr [:tax_url, '@urlTaxReductionList'], String, :read_only
 
 ### Flags
 
-| Flag         | Effect                                                   |
-|--------------|----------------------------------------------------------|
-| `:required`  | Raises `MissingAttributeError` if absent in API response |
-| `:optional`  | Documents that the field may be absent (default)         |
-| `:read_only` | Excluded from serialisation (not sent back to the API)   |
-| `:key`       | Marks the unique identifier for CRUD operations          |
+| Flag         | Effect                                                                 |
+|--------------|------------------------------------------------------------------------|
+| `:required`  | Raises `MissingAttributeError` if missing on `save` or in API response |
+| `:optional`  | Documents that the field may be absent (default)                       |
+| `:read_only` | Excluded from serialisation (not sent back to the API)                 |
+| `:key`       | Marks the unique identifier for CRUD operations                        |
 
 ```ruby
 key :id, Integer, :read_only

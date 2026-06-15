@@ -595,6 +595,10 @@ module RestEasy
         next if attr_def.read_only?
         value = @model_attributes[attr_def.model_name]
 
+        if attr_def.required? && !attr_def.synthetic? && value.nil?
+          raise MissingAttributeError.new(attr_def.model_name)
+        end
+
         if attr_def.target_fields.any?
           # Multi-param serialise: gather model values by param names, splat into block
           model_values = attr_def.target_fields.map { |fn| @model_attributes[fn] }

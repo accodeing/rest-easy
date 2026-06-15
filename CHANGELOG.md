@@ -2,6 +2,17 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`:required` is now enforced on serialise as well as parse.** Previously
+  the flag raised `MissingAttributeError` only when an API response omitted
+  the field; it was silently ignored when sending (`save`), letting
+  incomplete payloads reach the backend and surface as a generic
+  `RequestError`. The flag now also fires at `serialise` time (and therefore
+  on `save`) when a required attribute is `nil`, before any HTTP request,
+  with the attribute name on the exception (`#attribute_name`). Inbound
+  behavior is unchanged — `parse` still raises on missing required fields.
+
 ## [1.3.1] - 2026-05-27
 
 ### Fixed

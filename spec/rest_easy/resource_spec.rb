@@ -320,14 +320,131 @@ RSpec.describe RestEasy::Resource do
     end
 
     describe "attribute flags" do
-      it "supports :required flag" do
-        resource_class = Class.new(described_class) do
-          attr :name, String, :required
+      describe ":required flag" do
+        let(:resource_class) do
+          Class.new(described_class) do
+            attr :name, String, :required
+            attr :amount, Float
+          end
         end
 
-        expect {
-          resource_class.parse({})
-        }.to raise_error(RestEasy::MissingAttributeError)
+        context "on parse (inbound)" do
+          it "raises MissingAttributeError when a :required attribute is absent from the API response" do
+            expect {
+              resource_class.parse({})
+            }.to raise_error(RestEasy::MissingAttributeError)
+          end
+
+          it "names the missing attribute on the error" do
+            expect {
+              resource_class.parse({})
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:name)
+            }
+          end
+        end
+
+        context "on stub (build)" do
+          it "does not raise when a :required attribute is omitted" do
+            expect {
+              resource_class.stub(amount: 100.0)
+            }.not_to raise_error
+          end
+
+          it "does not raise when a :required attribute is set to nil" do
+            expect {
+              resource_class.stub(name: nil, amount: 100.0)
+            }.not_to raise_error
+          end
+        end
+
+        context "on serialise (outbound)" do
+          it "raises MissingAttributeError when a :required attribute is nil" do
+            instance = resource_class.stub(amount: 100.0)
+
+            expect {
+              instance.serialise
+            }.to raise_error(RestEasy::MissingAttributeError)
+          end
+
+          it "names the missing attribute on the error" do
+            instance = resource_class.stub(amount: 100.0)
+
+            expect {
+              instance.serialise
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:name)
+            }
+          end
+
+          it "does not raise when all :required attributes are present" do
+            instance = resource_class.stub(name: "Acme", amount: 100.0)
+
+            expect { instance.serialise }.not_to raise_error
+          end
+
+          it "raises when a parsed instance has been mutated to clear a :required attribute" do
+            instance = resource_class.parse({ "Name" => "Acme", "Amount" => 100.0 })
+            mutated = instance.update(name: nil)
+
+            expect {
+              mutated.serialise
+            }.to raise_error(RestEasy::MissingAttributeError)
+          end
+
+          it "does not enforce :required on :read_only attributes (never sent)" do
+            read_only_required = Class.new(described_class) do
+              key :id, Integer, :read_only, :required
+              attr :name, String
+            end
+
+            instance = read_only_required.parse({ "Id" => 1, "Name" => "Acme" })
+
+            expect { instance.serialise }.not_to raise_error
+          end
+        end
+
+        context "on save (no HTTP traffic on incomplete payload)" do
+          before(:all) do
+            module RequiredFlagTestApi
+              extend RestEasy
+
+              configure do |config|
+                config.base_url = "https://api.example.com/v1"
+              end
+            end
+
+            class RequiredFlagTestApi::Invoice < RestEasy::Resource
+              configure do
+                path "invoices"
+              end
+
+              key :document_number, Integer, :read_only
+              attr :customer_number, String, :required
+              attr :amount, Float
+            end
+          end
+
+          after(:all) do
+            Object.send(:remove_const, :RequiredFlagTestApi)
+          end
+
+          it "raises MissingAttributeError before issuing an HTTP request" do
+            instance = RequiredFlagTestApi::Invoice.stub(amount: 300.0)
+
+            allow(RequiredFlagTestApi::Invoice).to receive(:post)
+            allow(RequiredFlagTestApi::Invoice).to receive(:put)
+
+            expect {
+              RequiredFlagTestApi::Invoice.save(instance)
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:customer_number)
+            }
+
+            expect(RequiredFlagTestApi::Invoice).not_to have_received(:post)
+            expect(RequiredFlagTestApi::Invoice).not_to have_received(:put)
+          end
+        end
       end
 
       it "supports :optional flag" do

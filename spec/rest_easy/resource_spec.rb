@@ -484,6 +484,11 @@ RSpec.describe RestEasy::Resource do
         expect(attr_def.target_fields).to eq([:street, :city])
       end
 
+      it "auto-detects synthetic from mapper serialise parameter count" do
+        attr_def = @resource_class.all_attribute_definitions[:address]
+        expect(attr_def.synthetic?).to be true
+      end
+
       it "gathers model values by param names for serialise" do
         instance = @resource_class.stub(street: "Main St", city: "Stockholm", address: "ignored")
         serialised = instance.serialise
@@ -748,6 +753,20 @@ RSpec.describe RestEasy::Resource do
 
       attr_def = resource_class.all_attribute_definitions[:address]
       expect(attr_def.target_fields).to eq([:street, :city])
+    end
+
+    it "auto-detects synthetic from serialise block parameter count" do
+      resource_class = Class.new(described_class) do
+        attr :street, String
+        attr :city, String
+
+        attr :address, String do
+          serialise { |street, city| "#{street}, #{city}" }
+        end
+      end
+
+      attr_def = resource_class.all_attribute_definitions[:address]
+      expect(attr_def.synthetic?).to be true
     end
   end
 

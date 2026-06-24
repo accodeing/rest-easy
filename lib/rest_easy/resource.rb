@@ -250,6 +250,7 @@ module RestEasy
 
           serialise_params = serialise_block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
           if serialise_params.length > 1
+            flags << :synthetic unless flags.include?(:synthetic)
             target_fields = serialise_params.map { |_, pname| pname }
           end
         elsif block
@@ -284,6 +285,7 @@ module RestEasy
             if serialise_block
               params = serialise_block.parameters.select { |ptype, _| ptype == :opt || ptype == :req }
               if params.length > 1
+                flags << :synthetic unless flags.include?(:synthetic)
                 target_fields = params.map { |_, pname| pname }
               end
             end

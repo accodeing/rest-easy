@@ -12,6 +12,22 @@
   on `save`) when a required attribute is `nil`, before any HTTP request,
   with the attribute name on the exception (`#attribute_name`). Inbound
   behavior is unchanged — `parse` still raises on missing required fields.
+- **`:required` is now enforced on synthetic attributes (merge / combine /
+  split patterns).** Previously the flag was silently a no-op for any
+  attribute with a multi-parameter parse or serialise block. It now
+  enforces presence on all underlying API or model fields: a merge
+  attribute requires every source API field on parse; a combine attribute
+  requires every named model attribute on serialise; a split attribute
+  requires the underlying API field on parse. `:read_only` continues to
+  skip the serialise-time check.
+
+### Changed
+
+- **The DSL auto-applies `:synthetic` to multi-parameter serialise blocks**
+  (and mapper `serialise` methods), mirroring the existing behavior for
+  multi-parameter parse. Previously only the parse side was tagged,
+  leaving the flag inconsistent with its intent of marking attributes whose
+  storage shape diverges from the standard one-slot layout.
 
 ## [1.3.1] - 2026-05-27
 

@@ -328,7 +328,7 @@ attr [:tax_url, '@urlTaxReductionList'], String, :read_only
 
 | Flag         | Effect                                                                 |
 |--------------|------------------------------------------------------------------------|
-| `:required`  | Raises `MissingAttributeError` if missing on `save` or in API response |
+| `:required`  | Raises `MissingAttributeError` if absent in the API response (on parse) or `nil` at serialise time (`save`, `to_api`). See [Merge](#merge-pattern--many-api-fields-into-one-model-attribute), [Combine](#combine-pattern--many-model-attributes-into-one-api-field), and [Split](#split-pattern--one-api-field-into-many-model-attributes) patterns for how this applies to synthetic attributes. |
 | `:optional`  | Documents that the field may be absent (default)                       |
 | `:read_only` | Excluded from serialisation (not sent back to the API)                 |
 | `:key`       | Marks the unique identifier for CRUD operations                        |
@@ -430,6 +430,29 @@ end
 attr :full_name, String, FullNameMapper
 ```
 
+Marking a merge attribute `:required` enforces that **all** underlying API fields are present in the response on parse. If the attribute is also round-trippable (not `:read_only`), the merged model value must additionally be non-`nil` at serialise time.
+
+Note that string-concatenation merges like the `full_name` example above are inherently lossy on the round-trip — splitting `"Hans Erik Nilsson"` back into `FirstName`/`LastName` is ambiguous. Such attributes should normally be `:read_only`. Round-trippable merges work when the model representation preserves the structure (e.g. a tuple, a `Money` value object, or a `Date` built from year/month/day components).
+
+### Combine pattern — many model attributes into one API field
+
+The dual of merge: when the serialise method takes multiple parameters, RestEasy gathers the values from the corresponding model attributes and passes them in. The block returns the single combined API value:
+
+```ruby
+attr :street, String
+attr :city, String
+
+attr :address, String do
+  serialise { |street, city| "#{street}, #{city}" }
+end
+```
+
+The parameter names (`street`, `city`) name model attributes; the framework reads them from the instance and splats them into the block. The block's return value is written under the attribute's API name (`Address`).
+
+This also works with mapper objects whose `serialise` method takes multiple parameters.
+
+Marking a combine attribute `:required` enforces that **all** named model attributes are non-`nil` at serialise time. The parse side does not apply — combine attributes don't read from a single API field on the way in, so users typically populate the underlying model attributes directly.
+
 ### Split pattern — one API field into many model attributes
 
 Use a bare block with a parameter to extract from a single API field:
@@ -445,6 +468,8 @@ end
 ```
 
 The parameter name (`address`) determines which API field to read from.
+
+Marking a split attribute `:required` enforces that the underlying API field is present on parse. Since split attributes typically aren't sent back to the API as a single field, mark them `:read_only` to skip the serialise-time check.
 
 ### Ignoring fields
 

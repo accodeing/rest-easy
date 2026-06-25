@@ -404,6 +404,106 @@ RSpec.describe RestEasy::Resource do
           end
         end
 
+        context "on a synthetic merge attribute (many API → one model)" do
+          let(:merge_class) do
+            Class.new(described_class) do
+              attr :first_name, String
+              attr :last_name, String
+
+              attr :full_name, String, :required do
+                parse     { |first_name, last_name| "#{first_name} #{last_name}" }
+                serialise { |full_name|             full_name.split(' ', 2)       }
+              end
+            end
+          end
+
+          it "raises on parse when any source field is absent" do
+            expect {
+              merge_class.parse({ "FirstName" => "Alice" })
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:full_name)
+            }
+          end
+
+          it "does not raise on parse when all source fields are present" do
+            expect {
+              merge_class.parse({ "FirstName" => "Alice", "LastName" => "Smith" })
+            }.not_to raise_error
+          end
+
+          it "raises on serialise when the merged value is nil" do
+            instance = merge_class.stub(first_name: "Alice", last_name: "Smith")
+
+            expect {
+              instance.serialise
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:full_name)
+            }
+          end
+
+          it "does not raise on serialise when the merged value is present" do
+            instance = merge_class.stub(full_name: "Alice Smith")
+
+            expect { instance.serialise }.not_to raise_error
+          end
+        end
+
+        context "on a synthetic combine attribute (many model → one API)" do
+          let(:combine_class) do
+            Class.new(described_class) do
+              attr :street, String
+              attr :city, String
+
+              attr :address, String, :required do
+                serialise { |street, city| "#{street}, #{city}" }
+              end
+            end
+          end
+
+          it "raises on serialise when any target field is nil" do
+            instance = combine_class.stub(street: "Main St")
+
+            expect {
+              instance.serialise
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:address)
+            }
+          end
+
+          it "does not raise on serialise when all target fields are present" do
+            instance = combine_class.stub(street: "Main St", city: "Stockholm")
+
+            expect { instance.serialise }.not_to raise_error
+          end
+        end
+
+        context "on a :read_only synthetic attribute (derivational)" do
+          let(:derivational_class) do
+            Class.new(described_class) do
+              attr :first_name, String
+              attr :last_name, String
+
+              attr :full_name, String, :read_only, :required do |first_name, last_name|
+                "#{first_name} #{last_name}"
+              end
+            end
+          end
+
+          it "still enforces :required at parse time when a source field is absent" do
+            expect {
+              derivational_class.parse({ "FirstName" => "Alice" })
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:full_name)
+            }
+          end
+
+          it "does not enforce :required at serialise time (never sent)" do
+            instance = derivational_class.parse({ "FirstName" => "Alice", "LastName" => "Smith" })
+
+            expect { instance.serialise }.not_to raise_error
+          end
+        end
+
         context "on save (no HTTP traffic on incomplete payload)" do
           before(:all) do
             module RequiredFlagTestApi

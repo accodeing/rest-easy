@@ -595,8 +595,14 @@ module RestEasy
         next if attr_def.read_only?
         value = @model_attributes[attr_def.model_name]
 
-        if attr_def.required? && !attr_def.synthetic? && value.nil?
-          raise MissingAttributeError.new(attr_def.model_name)
+        if attr_def.required?
+          missing = if attr_def.target_fields.any?
+            attr_def.target_fields.any? { |fn| @model_attributes[fn].nil? }
+          else
+            value.nil?
+          end
+
+          raise MissingAttributeError.new(attr_def.model_name) if missing
         end
 
         if attr_def.target_fields.any?
@@ -689,6 +695,11 @@ module RestEasy
             api_key = convention.serialise(field_name)
             api_data[api_key]
           end
+
+          if attr_def.required? && raw_values.any?(&:nil?)
+            raise MissingAttributeError.new(model_name)
+          end
+
           @model_attributes[model_name] = attr_def.parse_value(*raw_values)
         else
           raw_value = api_data[attr_def.api_name]

@@ -701,6 +701,11 @@ module RestEasy
           end
 
           @model_attributes[model_name] = attr_def.parse_value(*raw_values)
+        elsif attr_def.synthetic?
+          # Combine pattern: the attribute's api_name does not exist on the
+          # API side by design — the value is built from target_fields at
+          # serialise time. Nothing inbound to read or validate.
+          @model_attributes[model_name] = nil
         else
           raw_value = api_data[attr_def.api_name]
 
@@ -737,6 +742,8 @@ module RestEasy
         # Warn about declared attributes missing from the API response
         klass.all_attribute_definitions.each do |model_name, attr_def|
           next if attr_def.required? # already raises
+          # Combine attrs have no inbound api_name; absence is expected.
+          next if attr_def.synthetic? && attr_def.source_fields.empty?
 
           api_keys_to_check = if attr_def.source_fields.any?
                                 attr_def.source_fields.map { |sf| convention.serialise(sf) }

@@ -28,6 +28,15 @@
   multi-parameter parse. Previously only the parse side was tagged,
   leaving the flag inconsistent with its intent of marking attributes whose
   storage shape diverges from the standard one-slot layout.
+- **Combine attributes no longer read from their `api_name` on parse.**
+  A combine attribute's API name does not correspond to a real inbound
+  field by design — the value is built from `target_fields` at serialise
+  time. The previous code looked up `api_data[api_name]`, stored it at
+  the model slot, and ran the standard `:required` check, raising
+  spuriously when the field was absent (the documented case). Inbound
+  values for the shadowed API key are now ignored and the model slot is
+  set to `nil`, avoiding the contradiction where `instance.address` could
+  return one value while serialise would overwrite it with another.
 
 ## [1.3.1] - 2026-05-27
 

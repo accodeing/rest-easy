@@ -328,7 +328,7 @@ attr [:tax_url, '@urlTaxReductionList'], String, :read_only
 
 | Flag         | Effect                                                                 |
 |--------------|------------------------------------------------------------------------|
-| `:required`  | Raises `MissingAttributeError` if absent in the API response (on parse) or `nil` at serialise time (`save`, `to_api`). See [Merge](#merge-pattern--many-api-fields-into-one-model-attribute), [Combine](#combine-pattern--many-model-attributes-into-one-api-field), and [Split](#split-pattern--one-api-field-into-many-model-attributes) patterns for how this applies to synthetic attributes. |
+| `:required`  | Raises `MissingAttributeError` if missing or explicitly `null` in the API response (on parse) or `nil` at serialise time (`save`, `to_api`). Omitted keys and explicit `null` are treated identically — a required attribute must carry a value. See [Merge](#merge-pattern--many-api-fields-into-one-model-attribute), [Combine](#combine-pattern--many-model-attributes-into-one-api-field), and [Split](#split-pattern--one-api-field-into-many-model-attributes) patterns for how this applies to synthetic attributes. |
 | `:optional`  | Documents that the field may be absent (default)                       |
 | `:read_only` | Excluded from serialisation (not sent back to the API)                 |
 | `:key`       | Marks the unique identifier for CRUD operations                        |

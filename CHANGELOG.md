@@ -12,6 +12,9 @@
   on `save`) when a required attribute is `nil`, before any HTTP request,
   with the attribute name on the exception (`#attribute_name`). Inbound
   behavior is unchanged — `parse` still raises on missing required fields.
+  A field is treated as missing whether the API response omits the key
+  entirely or includes it as explicit `null`; both are rejected as
+  incomplete data.
 - **`:required` is now enforced on synthetic attributes (merge / combine /
   split patterns).** Previously the flag was silently a no-op for any
   attribute with a multi-parameter parse or serialise block. It now

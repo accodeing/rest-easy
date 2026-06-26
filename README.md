@@ -453,6 +453,8 @@ This also works with mapper objects whose `serialise` method takes multiple para
 
 Marking a combine attribute `:required` enforces that **all** named model attributes are non-`nil` at serialise time. The parse side does not apply — combine attributes don't read from a single API field on the way in, so users typically populate the underlying model attributes directly.
 
+Combine attributes do not run a `parse` block. If you declare one alongside a multi-parameter `serialise`, RestEasy emits a warning at load time — the parse block would be silently ignored otherwise. If you need to read from an API field on parse, declare a separate attribute for it (or restructure as a merge pattern).
+
 ### Split pattern — one API field into many model attributes
 
 Use a bare block with a parameter to extract from a single API field:

@@ -289,6 +289,18 @@ module RestEasy
                 target_fields = params.map { |_, pname| pname }
               end
             end
+
+            # Combine pattern (multi-param serialise, no multi-param parse)
+            # has no inbound api_name on parse. If the user also wrote an
+            # explicit `parse` block, it will be silently ignored — warn so
+            # the inconsistency is visible at load time.
+            if target_fields.any? && source_fields.empty? && parse_block
+              warn "RestEasy: :#{attribute_model_name} declares a combine pattern " \
+                   "(serialise from #{target_fields.inspect}) and also defines a parse block. " \
+                   "Combine attributes have no inbound API field to read, so the parse block " \
+                   "will not run. Remove the parse block, or restructure the declaration if you " \
+                   "intended to read from the API."
+            end
           end
         end
 

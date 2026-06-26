@@ -342,6 +342,14 @@ RSpec.describe RestEasy::Resource do
               expect(e.attribute_name).to eq(:name)
             }
           end
+
+          it "raises when a :required attribute is explicitly null in the API response" do
+            expect {
+              resource_class.parse({ "Name" => nil, "Amount" => 100.0 })
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:name)
+            }
+          end
         end
 
         context "on stub (build)" do

@@ -395,6 +395,8 @@ RSpec.describe RestEasy::Resource do
             instance = resource_class.parse({ "Name" => "Acme", "Amount" => 100.0 })
             mutated = instance.update(name: nil)
 
+            expect(mutated.name).to be_nil
+
             expect {
               mutated.serialise
             }.to raise_error(RestEasy::MissingAttributeError)
@@ -406,7 +408,9 @@ RSpec.describe RestEasy::Resource do
               attr :name, String
             end
 
-            instance = read_only_required.parse({ "Id" => 1, "Name" => "Acme" })
+            # No :id supplied. If :read_only didn't short-circuit the
+            # :required check, the stub instance would raise on serialise.
+            instance = read_only_required.stub(name: "Acme")
 
             expect { instance.serialise }.not_to raise_error
           end

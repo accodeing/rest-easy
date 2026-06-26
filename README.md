@@ -471,7 +471,9 @@ end
 
 The parameter name (`address`) determines which API field to read from.
 
-Marking a split attribute `:required` enforces that the underlying API field is present on parse. Since split attributes typically aren't sent back to the API as a single field, mark them `:read_only` to skip the serialise-time check.
+Marking a split attribute `:required` enforces that the underlying API field is present on parse — in the example above, the API response must include `Address`.
+
+On serialise, split attributes are emitted under their own api_names (here, `Street` and `City`) rather than being recombined into the original source field. If the API does not accept the parts as independent top-level fields, mark them `:read_only` to keep them out of the outbound payload entirely; alternatively, reconstruct the source field in an `after_serialise` hook.
 
 ### Ignoring fields
 

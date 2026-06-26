@@ -505,6 +505,29 @@ RSpec.describe RestEasy::Resource do
           end
         end
 
+        context "on a :read_only combine attribute" do
+          let(:read_only_combine) do
+            Class.new(described_class) do
+              attr :street, String
+              attr :city, String
+
+              attr :address, String, :read_only, :required do
+                serialise { |street, city| "#{street}, #{city}" }
+              end
+            end
+          end
+
+          it "does not enforce :required at serialise time (never sent)" do
+            instance = read_only_combine.stub
+            expect { instance.serialise }.not_to raise_error
+          end
+
+          it "leaves the model slot nil on parse regardless of inbound value" do
+            instance = read_only_combine.parse({ "Address" => "ignored" })
+            expect(instance.address).to be_nil
+          end
+        end
+
         context "on a :read_only synthetic attribute (derivational)" do
           let(:derivational_class) do
             Class.new(described_class) do

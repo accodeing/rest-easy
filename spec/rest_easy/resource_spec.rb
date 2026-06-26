@@ -1034,6 +1034,50 @@ RSpec.describe RestEasy::Resource do
       attr_def = resource_class.all_attribute_definitions[:address]
       expect(attr_def.synthetic?).to be true
     end
+
+    it "warns when a combine attribute also defines an explicit parse block" do
+      expect {
+        Class.new(described_class) do
+          attr :street, String
+          attr :city, String
+
+          attr :address, String do
+            parse     { |val| val.to_s.upcase }
+            serialise { |street, city| "#{street}, #{city}" }
+          end
+        end
+      }.to output(
+        /:address declares a combine pattern.*parse block.*will not run/m
+      ).to_stderr
+    end
+
+    it "does not warn when the combine attribute has no explicit parse block" do
+      expect {
+        Class.new(described_class) do
+          attr :street, String
+          attr :city, String
+
+          attr :address, String do
+            serialise { |street, city| "#{street}, #{city}" }
+          end
+        end
+      }.not_to output(/declares a combine pattern/).to_stderr
+    end
+
+    it "does not warn for mapper-form combine attributes" do
+      mapper = Module.new do
+        def self.parse(raw_value) = raw_value
+        def self.serialise(street, city) = "#{street}, #{city}"
+      end
+
+      expect {
+        Class.new(described_class) do
+          attr :street, String
+          attr :city, String
+          attr :address, String, mapper
+        end
+      }.not_to output(/declares a combine pattern/).to_stderr
+    end
   end
 
   # ── Resource-level hooks ───────────────────────────────────────────────

@@ -36,6 +36,13 @@ module RestEasy
       @flags.include?(:synthetic)
     end
 
+    def validate_required!(*values)
+      return unless required?
+      return if values.none?(&:nil?)
+
+      raise RestEasy::MissingAttributeError.new(model_name)
+    end
+
     def coerce(value)
       @type[value]
     rescue Dry::Types::ConstraintError, Dry::Types::CoercionError => e

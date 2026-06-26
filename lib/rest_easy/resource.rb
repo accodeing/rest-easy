@@ -595,21 +595,13 @@ module RestEasy
         next if attr_def.read_only?
         value = @model_attributes[attr_def.model_name]
 
-        if attr_def.required?
-          missing = if attr_def.target_fields.any?
-            attr_def.target_fields.any? { |fn| @model_attributes[fn].nil? }
-          else
-            value.nil?
-          end
-
-          raise MissingAttributeError.new(attr_def.model_name) if missing
-        end
-
         if attr_def.target_fields.any?
           # Multi-param serialise: gather model values by param names, splat into block
           model_values = attr_def.target_fields.map { |fn| @model_attributes[fn] }
+          attr_def.validate_required!(*model_values)
           result[attr_def.api_name] = attr_def.serialise_value(*model_values)
         elsif attr_def.source_fields.any?
+          attr_def.validate_required!(value)
           serialised = attr_def.serialise_value(value)
           if serialised.is_a?(::Array)
             # Array return: zip with source field API names
@@ -625,6 +617,7 @@ module RestEasy
             result[attr_def.api_name] = serialised
           end
         else
+          attr_def.validate_required!(value)
           result[attr_def.api_name] = attr_def.serialise_value(value)
         end
       end
@@ -696,9 +689,7 @@ module RestEasy
             api_data[api_key]
           end
 
-          if attr_def.required? && raw_values.any?(&:nil?)
-            raise MissingAttributeError.new(model_name)
-          end
+          attr_def.validate_required!(*raw_values)
 
           @model_attributes[model_name] = attr_def.parse_value(*raw_values)
         elsif attr_def.synthetic?
@@ -709,9 +700,7 @@ module RestEasy
         else
           raw_value = api_data[attr_def.api_name]
 
-          if raw_value.nil? && attr_def.required?
-            raise MissingAttributeError.new(model_name)
-          end
+          attr_def.validate_required!(raw_value)
 
           if raw_value.nil?
             @model_attributes[model_name] = nil

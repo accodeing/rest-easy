@@ -51,7 +51,7 @@ RSpec.describe RestEasy::Attribute do
   describe "#combine?" do
     let(:type) { RestEasy::Types::Coercible::String }
 
-    it "is true when synthetic with no source_fields" do
+    it "is true when target_fields is populated and source_fields is empty" do
       attr = described_class.new(
         model_name: :address, api_name: "Address", type:,
         flags: [:synthetic], target_fields: [:street, :city]
@@ -59,7 +59,7 @@ RSpec.describe RestEasy::Attribute do
       expect(attr.combine?).to be true
     end
 
-    it "is false when synthetic with source_fields (merge / split)" do
+    it "is false when source_fields is also populated (merge / split)" do
       attr = described_class.new(
         model_name: :full_name, api_name: "FullName", type:,
         flags: [:synthetic], source_fields: [:first_name, :last_name]
@@ -69,6 +69,18 @@ RSpec.describe RestEasy::Attribute do
 
     it "is false for a non-synthetic standard attribute" do
       attr = described_class.new(model_name: :name, api_name: "Name", type:)
+      expect(attr.combine?).to be false
+    end
+
+    it "is false when :synthetic is set but no target_fields are present" do
+      # Edge case: user explicitly passes :synthetic as a flag without a
+      # multi-param block. The attribute is not actually combine-shaped —
+      # treating it as such would incorrectly skip the api_name lookup
+      # on parse and silently set the model slot to nil.
+      attr = described_class.new(
+        model_name: :foo, api_name: "Foo", type:,
+        flags: [:synthetic]
+      )
       expect(attr.combine?).to be false
     end
   end

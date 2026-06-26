@@ -553,7 +553,7 @@ RSpec.describe RestEasy::Resource do
             Object.send(:remove_const, :RequiredFlagTestApi)
           end
 
-          it "raises MissingAttributeError before issuing an HTTP request" do
+          it "raises before POSTing a new record" do
             instance = RequiredFlagTestApi::Invoice.stub(amount: 300.0)
 
             allow(RequiredFlagTestApi::Invoice).to receive(:post)
@@ -561,6 +561,27 @@ RSpec.describe RestEasy::Resource do
 
             expect {
               RequiredFlagTestApi::Invoice.save(instance)
+            }.to raise_error(RestEasy::MissingAttributeError) { |e|
+              expect(e.attribute_name).to eq(:customer_number)
+            }
+
+            expect(RequiredFlagTestApi::Invoice).not_to have_received(:post)
+            expect(RequiredFlagTestApi::Invoice).not_to have_received(:put)
+          end
+
+          it "raises before PUTing an updated record" do
+            instance = RequiredFlagTestApi::Invoice.parse({
+              "DocumentNumber"  => 1,
+              "CustomerNumber"  => "CUST-001",
+              "Amount"          => 300.0
+            })
+            mutated = instance.update(customer_number: nil)
+
+            allow(RequiredFlagTestApi::Invoice).to receive(:post)
+            allow(RequiredFlagTestApi::Invoice).to receive(:put)
+
+            expect {
+              RequiredFlagTestApi::Invoice.save(mutated)
             }.to raise_error(RestEasy::MissingAttributeError) { |e|
               expect(e.attribute_name).to eq(:customer_number)
             }

@@ -36,6 +36,13 @@ module RestEasy
       @flags.include?(:synthetic)
     end
 
+    # A combine attribute is built from multiple model fields on serialise
+    # (target_fields), with no inbound source from its own api_name on parse.
+    # See the "Combine pattern" section of the README.
+    def combine?
+      synthetic? && @source_fields.empty?
+    end
+
     def validate_required!(*values)
       return unless required?
       return if values.none?(&:nil?)

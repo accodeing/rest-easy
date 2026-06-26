@@ -593,7 +593,6 @@ module RestEasy
       # Serialise all attributes
       klass.all_attribute_definitions.each do |_model_name, attr_def|
         next if attr_def.read_only?
-        value = @model_attributes[attr_def.model_name]
 
         if attr_def.target_fields.any?
           # Multi-param serialise: gather model values by param names, splat into block
@@ -601,6 +600,7 @@ module RestEasy
           attr_def.validate_required!(*model_values)
           result[attr_def.api_name] = attr_def.serialise_value(*model_values)
         elsif attr_def.source_fields.any?
+          value = @model_attributes[attr_def.model_name]
           attr_def.validate_required!(value)
           serialised = attr_def.serialise_value(value)
           if serialised.is_a?(::Array)
@@ -617,6 +617,7 @@ module RestEasy
             result[attr_def.api_name] = serialised
           end
         else
+          value = @model_attributes[attr_def.model_name]
           attr_def.validate_required!(value)
           result[attr_def.api_name] = attr_def.serialise_value(value)
         end
@@ -692,7 +693,7 @@ module RestEasy
           attr_def.validate_required!(*raw_values)
 
           @model_attributes[model_name] = attr_def.parse_value(*raw_values)
-        elsif attr_def.synthetic?
+        elsif attr_def.combine?
           # Combine pattern: the attribute's api_name does not exist on the
           # API side by design — the value is built from target_fields at
           # serialise time. Nothing inbound to read or validate.
@@ -728,11 +729,12 @@ module RestEasy
           end
         end
 
-        # Warn about declared attributes missing from the API response
+        # Warn about declared attributes missing from the API response.
+        # Combine attrs have no inbound api_name by design; non-combine
+        # required attrs already raised in the parse loop above.
         klass.all_attribute_definitions.each do |model_name, attr_def|
-          next if attr_def.required? # already raises
-          # Combine attrs have no inbound api_name; absence is expected.
-          next if attr_def.synthetic? && attr_def.source_fields.empty?
+          next if attr_def.combine?
+          next if attr_def.required?
 
           api_keys_to_check = if attr_def.source_fields.any?
                                 attr_def.source_fields.map { |sf| convention.serialise(sf) }

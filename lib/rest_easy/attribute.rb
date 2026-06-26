@@ -40,7 +40,7 @@ module RestEasy
     # (target_fields), with no inbound source from its own api_name on parse.
     # See the "Combine pattern" section of the README.
     def combine?
-      synthetic? && @source_fields.empty?
+      @target_fields.any? && @source_fields.empty?
     end
 
     def validate_required!(*values)

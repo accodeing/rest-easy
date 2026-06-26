@@ -475,6 +475,22 @@ RSpec.describe RestEasy::Resource do
 
             expect { instance.serialise }.not_to raise_error
           end
+
+          it "does not raise on parse when the combined API field is absent" do
+            expect {
+              combine_class.parse({ "Street" => "Main St", "City" => "Stockholm" })
+            }.not_to raise_error
+          end
+
+          it "ignores any inbound value for the combined API field (no shadowing)" do
+            instance = combine_class.parse({
+              "Street"  => "Main St",
+              "City"    => "Stockholm",
+              "Address" => "Should be ignored"
+            })
+
+            expect(instance.address).to be_nil
+          end
         end
 
         context "on a :read_only synthetic attribute (derivational)" do

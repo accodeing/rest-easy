@@ -2,6 +2,48 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`Meta` no longer claims to implement methods it has no value for.**
+  `Meta#respond_to_missing?` returned `true` for every name, so any caller
+  that asks an object what it can do before calling it got a false yes, then
+  received the `nil` that `method_missing` returns for an unknown key as
+  though it were a real answer. Ruby does this constantly and implicitly —
+  coercion probes when a value is splatted or interpolated, serialisation
+  hooks, and any library that duck-types with `respond_to?` — so the failure
+  surfaced far from `Meta` and looked unrelated to it. Marshalling was the
+  sharpest case: `dump` silently wrote an empty payload and `load` then
+  raised `NoMethodError` from inside `method_missing`, which broke every
+  consumer caching resources in a store that marshals its entries.
+
+  Bare getters are now claimed only for keys the instance actually holds.
+  Setters and predicates are still claimed unconditionally, since writing is
+  how a key comes into existence and an unset predicate is meaningfully
+  `false`; no core Ruby probe uses those two shapes. Library-level
+  duck-typing can, though — ActiveSupport's `acts_like?(:date)` asks for
+  `acts_like_date?`, and `Meta` still answers yes — so the guarantee is
+  narrower than "nothing probes for `=` or `?`", and closing it properly is
+  tracked in #7. Operators are no longer claimed either: the check is
+  anchored to identifier-shaped names, so `<=` is not mistaken for a setter
+  (`method_missing` still is — #6).
+  `Resource::MetaCollector` had the identical defect and is fixed the same
+  way.
+
+  **Upgrading with a warm cache:** entries written by an earlier version are
+  not recoverable. A payload dumped before this fix carries `nil` where the
+  meta state should be, and loading it now raises `TypeError: instance of
+  RestEasy::Meta needs to have method 'marshal_load'` — legible, but still
+  an error. Consumers on a cache that survives deploys (`:file_store`,
+  Redis, Memcached) must flush it or bump the cache key namespace when
+  upgrading. A process-local `:memory_store` clears itself on restart and
+  needs nothing.
+
+  `method_missing` is unchanged: a bare getter for a key that was never set
+  still returns `nil` rather than raising, as the "gem author extensions"
+  example in `docs/model-architecture.md` depends on. `respond_to?`
+  therefore under-reports for those keys; reconciling the two halves
+  requires declaring meta keys up front and is tracked in #7.
+
 ## [1.4.0] - 2026-06-26
 
 ### Fixed

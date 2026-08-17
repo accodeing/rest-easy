@@ -105,6 +105,44 @@ RSpec.describe RestEasy::Resource do
     end
   end
 
+  describe RestEasy::Resource::MetaCollector do
+    it "collects what a before_parse hook writes" do
+      collector = described_class.new
+      collector.partial = true
+
+      expect(collector.partial).to be true
+      expect(collector.to_h).to eq({ partial: true })
+    end
+
+    it "claims a getter for a key it holds, and setters unconditionally" do
+      collector = described_class.new
+      collector.partial = true
+
+      expect(collector.respond_to?(:partial)).to be true
+      expect(collector.respond_to?(:etag=)).to be true
+    end
+
+    # Same defect as Meta had: a blanket `true` hands Ruby's implicit probes
+    # the `nil` that `method_missing` returns.
+    it "does not claim protocol methods Ruby probes for implicitly" do
+      collector = described_class.new
+
+      probes = %i[marshal_dump to_ary to_hash to_str to_proc]
+
+      expect(probes.reject { |probe| collector.respond_to?(probe) }).to eq(probes)
+    end
+
+    it "does not claim operators that happen to end in =" do
+      collector = described_class.new
+
+      expect(%i[<= >=].reject { |op| collector.respond_to?(op) }).to eq(%i[<= >=])
+    end
+
+    it "does not raise when probed on an uninitialised instance" do
+      expect { described_class.allocate.respond_to?(:init_with) }.not_to raise_error
+    end
+  end
+
   # ── Attribute declarations ─────────────────────────────────────────────
 
   describe "attr" do

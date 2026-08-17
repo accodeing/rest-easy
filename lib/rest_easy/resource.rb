@@ -119,8 +119,22 @@ module RestEasy
         end
       end
 
-      def respond_to_missing?(_name, _include_private = false)
-        true
+      # Anchored so operators stay out — see Meta::ACCESSOR_PATTERN and
+      # issue #6. Only the setter shape here; unlike Meta, `method_missing`
+      # above has no predicate form.
+      SETTER_PATTERN = /\A[a-zA-Z_]\w*=\z/
+      private_constant :SETTER_PATTERN
+
+      # Same reasoning as Meta#respond_to_missing? — a blanket `true` makes
+      # this claim Ruby's implicit protocol methods and hand them the `nil`
+      # from `method_missing`. `@data` is guarded for the same reason too:
+      # `respond_to?` must never raise, and Psych and Marshal both probe a
+      # bare allocation before it is initialised.
+      def respond_to_missing?(name, include_private = false)
+        return true if SETTER_PATTERN.match?(name.to_s)
+        return super unless @data
+
+        @data.key?(name.to_sym) || super
       end
     end
 

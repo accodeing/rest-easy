@@ -29,7 +29,11 @@ module RestEasy
     # stay out: `<=` ends with `=`, and claiming it would let `meta <= 5`
     # read as a setter. `method_missing` itself is still unanchored and
     # writes `@data[:<]` for that call — see issue #6.
-    ACCESSOR_PATTERN = /\A[a-zA-Z_]\w*[=?]\z/
+    #
+    # POSIX classes rather than `[a-zA-Z_]\w*`, because Ruby identifiers are
+    # not ASCII-only: `meta.företag = x` is a valid setter that
+    # `method_missing` stores, so `respond_to?` has to claim it too.
+    ACCESSOR_PATTERN = /\A[[:alpha:]_][[:word:]]*[=?]\z/
     private_constant :ACCESSOR_PATTERN
 
     # `method_missing` answers to any name, but this must not, because callers

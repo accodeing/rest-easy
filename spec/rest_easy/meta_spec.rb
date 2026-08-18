@@ -64,6 +64,20 @@ RSpec.describe RestEasy::Meta do
       expect(%i[<= >=].reject { |op| meta.respond_to?(op) }).to eq(%i[<= >=])
     end
 
+    # Ruby identifiers are not ASCII-only, and `method_missing` happily
+    # stores a non-ASCII key, so `respond_to?` has to agree.
+    it "claims non-ASCII accessors, which method_missing accepts" do
+      meta = described_class.new
+
+      expect(meta.respond_to?(:"företag=")).to be true
+      expect(meta.respond_to?(:"företag?")).to be true
+
+      meta.företag = "BolagsKraft"
+
+      expect(meta.respond_to?(:företag)).to be true
+      expect(meta.företag).to eq("BolagsKraft")
+    end
+
     # respond_to? must never raise. Ruby allocates before initialising, so
     # @data can legitimately be nil when a probe arrives.
     it "does not raise when probed on an uninitialised instance" do
@@ -178,7 +192,7 @@ RSpec.describe RestEasy::Meta do
       stale = "\x04\bU:\x13RestEasy::Meta0"
 
       expect { Marshal.load(stale) }
-        .to raise_error(TypeError, /needs to have method `marshal_load'/)
+        .to raise_error(TypeError, /needs to have method .marshal_load./)
     end
   end
 

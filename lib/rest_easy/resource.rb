@@ -122,7 +122,7 @@ module RestEasy
       # Anchored so operators stay out — see Meta::ACCESSOR_PATTERN and
       # issue #6. Only the setter shape here; unlike Meta, `method_missing`
       # above has no predicate form.
-      SETTER_PATTERN = /\A[a-zA-Z_]\w*=\z/
+      SETTER_PATTERN = /\A[[:alpha:]_][[:word:]]*=\z/
       private_constant :SETTER_PATTERN
 
       # Same reasoning as Meta#respond_to_missing? — a blanket `true` makes

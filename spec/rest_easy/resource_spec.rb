@@ -138,6 +138,10 @@ RSpec.describe RestEasy::Resource do
       expect(%i[<= >=].reject { |op| collector.respond_to?(op) }).to eq(%i[<= >=])
     end
 
+    it "claims non-ASCII setters, which method_missing accepts" do
+      expect(described_class.new.respond_to?(:"företag=")).to be true
+    end
+
     it "does not raise when probed on an uninitialised instance" do
       expect { described_class.allocate.respond_to?(:init_with) }.not_to raise_error
     end

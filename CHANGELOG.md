@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [1.4.2] - 2026-09-23
+
 ### Fixed
 
 - **`update` no longer discards state it should carry forward.** It rebuilt
@@ -193,7 +195,8 @@
 
 Initial release.
 
-[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.4.1...HEAD
+[Unreleased]: https://github.com/accodeing/rest-easy/compare/v1.4.2...HEAD
+[1.4.2]: https://github.com/accodeing/rest-easy/compare/v1.4.1...v1.4.2
 [1.4.1]: https://github.com/accodeing/rest-easy/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/accodeing/rest-easy/compare/v1.3.1...v1.4.0
 [1.3.1]: https://github.com/accodeing/rest-easy/compare/v1.3.0...v1.3.1

@@ -2,6 +2,32 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **`update` no longer discards state it should carry forward.** It rebuilt
+  the instance's metadata and its change set from scratch instead of
+  inheriting them, which broke three things at once:
+
+  - An instance that had never been saved came back marked as persisted, so
+    `save` took the update branch: a PUT to the collection path with no id in
+    it, for a record the API has never seen, instead of a POST that creates
+    one. Building a record and adjusting it before the first save is the
+    ordinary way to use an immutable resource, and it could not produce a
+    correct create request.
+  - Chained updates kept only the last call's fields. After
+    `a.update(x: 1).update(y: 2)`, `__changes__` reported just `y` while `x`
+    read back as `1` on the instance, so a partial payload built from the
+    change set left out a field the object claimed to carry, and nothing
+    raised.
+  - Metadata set by a `before_parse` hook lives on the instance, not the
+    class, and was dropped. A consumer flagging parsed instances — to mark
+    the thin records a collection endpoint returns, say — lost the flag as
+    soon as anything called `update`.
+
+  `update` now inherits the receiver's metadata and merges its change set.
+  The metadata is copied rather than shared, so mutating an updated copy's
+  metadata still cannot reach the original's.
+
 ## [1.4.1] - 2026-08-18
 
 ### Fixed

@@ -6,6 +6,11 @@ module RestEasy
       @data = { new: new_record, saved: saved, **defaults }
     end
 
+    def initialize_copy(source)
+      super
+      @data = @data.dup
+    end
+
     def new?
       @data[:new]
     end

@@ -598,7 +598,7 @@ module RestEasy
 
       new_model = @model_attributes.merge(coerced)
       new_instance = self.class.allocate
-      new_instance.send(:init_from_update, new_model, @api_data, coerced)
+      new_instance.send(:init_from_update, new_model, @api_data, __changes__.merge(coerced), @meta)
       new_instance
     end
 
@@ -801,11 +801,14 @@ module RestEasy
       end
     end
 
-    def init_from_update(new_model_attrs, original_api_data, changes)
+    def init_from_update(new_model_attrs, original_api_data, changes, meta)
       @api_data = original_api_data
       @model_attributes = new_model_attrs
       @changes = changes
-      @meta = Meta.new(new_record: false, saved: true, **self.class.metadata)
+      # Carried from the receiver, not rebuilt: an instance that was never
+      # saved stays new, so `save` still POSTs it, and metadata a parse hook
+      # set (which lives on the instance, not the class) survives the update.
+      @meta = meta.dup
     end
   end
 end

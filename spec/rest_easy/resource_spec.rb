@@ -1374,6 +1374,52 @@ RSpec.describe RestEasy::Resource do
     end
   end
 
+  # ── State carried across update ────────────────────────────────────────
+
+  describe "state carried across update" do
+    before do
+      @resource_class = Class.new(described_class) do
+        key :id, Integer
+        attr :name, String
+        attr :amount, Float
+
+        before_parse do |data, meta|
+          meta.flagged = true
+          data
+        end
+      end
+    end
+
+    it "leaves a never-saved instance new" do
+      instance = @resource_class.stub(name: "Acme")
+
+      expect(instance.meta.new?).to be(true)
+      expect(instance.update(amount: 1.0).meta.new?).to be(true)
+    end
+
+    it "accumulates changes across chained updates" do
+      instance = @resource_class.parse({ "Id" => 1, "Name" => "Old", "Amount" => 100.0 })
+      updated = instance.update(name: "New").update(amount: 42.0)
+
+      expect(updated.__changes__).to include(name: "New", amount: 42.0)
+    end
+
+    it "preserves metadata set while parsing" do
+      instance = @resource_class.parse({ "Id" => 1, "Name" => "Old", "Amount" => 100.0 })
+
+      expect(instance.meta.flagged?).to be(true)
+      expect(instance.update(name: "New").meta.flagged?).to be(true)
+    end
+
+    it "does not let an updated copy mutate the original's metadata" do
+      instance = @resource_class.parse({ "Id" => 1, "Name" => "Old", "Amount" => 100.0 })
+      updated = instance.update(name: "New")
+      updated.meta.flagged = false
+
+      expect(instance.meta.flagged?).to be(true)
+    end
+  end
+
   # ── Serialisation ──────────────────────────────────────────────────────
 
   describe "serialisation" do

@@ -11,9 +11,8 @@
   These retries wait for the response's `Retry-After` header (seconds or an
   HTTP date, 1 second without one or without a response); one asking for
   more than 10 seconds raises instead. A retry that `on_rejected` asks for
-  is still made at once. Off by default, since PUT
-  and DELETE are only safe to repeat on APIs that implement them
-  idempotently.
+  is still made at once. Off by default, since PUT and DELETE are only safe
+  to repeat on APIs that implement them idempotently.
 
 ## [1.4.2] - 2026-09-23
 

@@ -12,6 +12,7 @@ module RestEasy
     setting :log_bodies, default: false, reader: true
     setting :logger, reader: true
     setting :max_retries, default: 3, reader: true
+    setting :retry_transient_errors, default: false, reader: true
 
     setting :conversions do
       setting :json_attributes, default: Conventions::DEFAULT, reader: true

@@ -101,6 +101,7 @@ end
 | `log_bodies`                     | `false`                    | When `true`, request/response bodies are logged. Off by default to avoid leaking domain secrets |
 | `logger`                         | `nil`                      | When set, attaches Faraday's logger middleware and writes HTTP request/response details to it |
 | `max_retries`                    | `3`                        | Retry count on request failure                                                             |
+| `retry_transient_errors`         | `false`                    | When `true`, 429 responses, and 5xx responses, timeouts and dropped connections on GET, PUT and DELETE, are retried without calling `on_rejected`; see [the retry lifecycle](#custom-authentication) |
 
 ### Logging HTTP traffic
 
@@ -654,6 +655,14 @@ The retry lifecycle:
 3. On failure: `auth.on_rejected(response)`
    - Return normally → retry (up to `max_retries`)
    - Raise → propagate error
+
+With `retry_transient_errors` on, a 429 skips step 3 and is retried directly, up to `max_retries`. So is a 5xx on GET, PUT or DELETE. A 5xx on POST still goes through step 3, because the server may already have acted on it, and repeating a POST that creates something can create it twice.
+
+A timeout or a dropped connection (`Faraday::TimeoutError`, `Faraday::ConnectionFailed`) has no response to pass to `on_rejected`, so it is normally raised straight away. With the setting on, it is retried on GET, PUT or DELETE in the same way, for the same reason. On POST it is still raised.
+
+Before each of these retries the request waits for as long as the response's `Retry-After` header says, either in seconds or as an HTTP date, and 1 second without one or without a response. If `Retry-After` asks for more than 10 seconds the error is raised straight away, since retrying sooner than the server allows would only fail again. A retry that `on_rejected` asks for, such as after a 5xx on POST, is made straight away, as it is without the setting.
+
+It is off by default because a PUT or DELETE is only safe to repeat when the API implements them idempotently. Turn it on for APIs that do.
 
 ## CRUD operations
 

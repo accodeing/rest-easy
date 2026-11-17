@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`retry_transient_errors` setting** (default `false`). When on, 429
+  responses, and 5xx responses, timeouts and dropped connections on GET, PUT
+  and DELETE, are retried up to `max_retries` without calling the
+  authentication's `on_rejected`, which then only sees the other failures.
+  These retries wait for the response's `Retry-After` header (seconds or an
+  HTTP date, 1 second without one or without a response); one asking for
+  more than 10 seconds raises instead. A retry that `on_rejected` asks for
+  is still made at once. Off by default, since PUT
+  and DELETE are only safe to repeat on APIs that implement them
+  idempotently.
+
 ## [1.4.2] - 2026-09-23
 
 ### Fixed

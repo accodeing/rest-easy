@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "rubygems"
+require "time"
 require "dry/types"
 require "faraday"
 require "zeitwerk"
@@ -16,6 +17,9 @@ loader.setup
 module RestEasy
   # Make Boolean available as a bare type constant (Ruby has no built-in Boolean)
   ::Object.const_set(:Boolean, Dry::Types["params.bool"]) unless defined?(::Boolean)
+
+  DEFAULT_RETRY_AFTER_IN_SECONDS = 1
+  MAX_RETRY_AFTER_IN_SECONDS = 10
 
   # ── Error hierarchy ──────────────────────────────────────────────────
 
@@ -68,6 +72,9 @@ module RestEasy
   module ClassMethods
     STANDARD_AUTH_HEADERS = %w[Authorization Proxy-Authorization Cookie Set-Cookie].freeze
     private_constant :STANDARD_AUTH_HEADERS
+
+    IDEMPOTENT_METHODS = %i[get put delete].freeze
+    private_constant :IDEMPOTENT_METHODS
 
     def config
       self::Settings.config
@@ -166,11 +173,48 @@ module RestEasy
       rescue RequestError => e
         attempts += 1
         if attempts <= max_retries
-          auth.on_rejected(e.response)
+          if config.retry_transient_errors && transient?(method, e.response)
+            wait = retry_after(e.response)
+            raise if wait > MAX_RETRY_AFTER_IN_SECONDS
+
+            Kernel.sleep(wait)
+          else
+            auth.on_rejected(e.response)
+          end
           retry
         end
         raise
+
+      rescue Faraday::TimeoutError, Faraday::ConnectionFailed
+        attempts += 1
+        raise unless attempts <= max_retries && config.retry_transient_errors && IDEMPOTENT_METHODS.include?(method)
+
+        Kernel.sleep(DEFAULT_RETRY_AFTER_IN_SECONDS)
+        retry
       end
+    end
+
+    # A 429 means the server did not act on the request, so any method can be
+    # repeated. A 5xx may come after it did, so only idempotent ones are.
+    def transient?(method, response)
+      return false unless response
+      return true if response.status == 429
+
+      (500..599).cover?(response.status) && IDEMPOTENT_METHODS.include?(method)
+    end
+
+    def retry_after(response)
+      value = response.headers["Retry-After"]
+      return DEFAULT_RETRY_AFTER_IN_SECONDS unless value
+
+      seconds = Integer(value, 10, exception: false) || seconds_until(value) || DEFAULT_RETRY_AFTER_IN_SECONDS
+      seconds.clamp(0..)
+    end
+
+    def seconds_until(http_date)
+      (Time.httpdate(http_date) - Time.now).ceil
+    rescue ArgumentError
+      nil
     end
 
   end

@@ -72,10 +72,10 @@ RSpec.describe RestEasy::Meta do
       expect(meta.respond_to?(:"företag=")).to be true
       expect(meta.respond_to?(:"företag?")).to be true
 
-      meta.företag = "BolagsKraft"
+      meta.företag = "Exempelbolaget"
 
       expect(meta.respond_to?(:företag)).to be true
-      expect(meta.företag).to eq("BolagsKraft")
+      expect(meta.företag).to eq("Exempelbolaget")
     end
 
     # respond_to? must never raise. Ruby allocates before initialising, so
